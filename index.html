@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado CTPM I v2.6 (Cloud)</title>
+    <title>Simulado Cloud v2.8</title>
+    <!-- Chart.js para os gráficos do Painel -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -40,6 +41,15 @@
         details.texto-apoio summary::before { content: '📖'; margin-right: 8px; }
         .texto-conteudo { padding: 15px; font-size: 0.95rem; text-align: justify; background-color: white; }
         
+        .imagem-questao {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 15px auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
         .question-text { font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; }
         .options { display: flex; flex-direction: column; gap: 10px; }
         .option { display: flex; align-items: center; padding: 10px 15px; border: 2px solid #bdc3c7; border-radius: 6px; cursor: pointer; background-color: #fff; transition: 0.2s; }
@@ -131,7 +141,7 @@
 <div class="container">
     <header>
         <div>
-            <h1>Simulado Cloud v2.6</h1>
+            <h1>Simulado Cloud v2.8</h1>
             <p style="margin: 5px 0 0; font-size: 0.9rem;" id="header-subtitle">Carregando banco de questões...</p>
         </div>
         <button class="header-btn" onclick="toggleDashboard()">📊 Painel</button>
@@ -145,6 +155,7 @@
                     <option value="todas">Todas</option>
                     <option value="Língua Portuguesa">Língua Portuguesa</option>
                     <option value="Matemática">Matemática</option>
+                    <option value="Inglês">Inglês</option>
                 </select>
             </div>
             <div class="control-group">
@@ -153,6 +164,7 @@
                     <option value="5">5 Questões</option>
                     <option value="10" selected>10 Questões</option>
                     <option value="20">20 Questões</option>
+                    <option value="30">30 Questões</option>
                     <option value="999">Todas Disponíveis</option>
                 </select>
             </div>
@@ -238,9 +250,6 @@
 </div>
 
 <script>
-    // ==========================================
-    // CONFIGURAÇÃO
-    // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbyjiZ6DOUnSn7g1CCw-woAPwKvgAynczkKJAK_vajbQFmiWLLUfj0BrtenKlLCpf5HV4w/exec"; 
     const LINK_RECURSO = "https://wa.me/5569999999999?text=Ola,%20encontrei%20um%20erro%20na%20questao:%20"; 
 
@@ -261,9 +270,6 @@
     const btnReview = document.getElementById('btn-review');
     const gabaritoGrid = document.getElementById('gabarito-grid');
 
-    // ==========================================
-    // 1. CARREGAR DADOS (CORREÇÃO DO ACENTO)
-    // ==========================================
     async function carregarQuestoes() {
         try {
             const response = await fetch(API_URL + "?action=questoes");
@@ -283,11 +289,11 @@
                     A: q.Opcao_A, B: q.Opcao_B, C: q.Opcao_C, D: q.Opcao_D, E: q.Opcao_E 
                 },
                 correct: String(q.Resposta_Correta).trim().toUpperCase(),
-                // Correção: Lê tanto com acento (Instituição) quanto sem acento
                 instituicao: (q.Instituicao || q['Instituição'] || "Geral").trim(),
                 ano: q.Ano ? String(q.Ano).trim() : "",
                 serie: q.Serie ? String(q.Serie).trim() : "",
-                explicacao: q.Explicacao ? String(q.Explicacao).trim() : ""
+                explicacao: q.Explicacao ? String(q.Explicacao).trim() : "",
+                imagem: q.Imagem_URL ? String(q.Imagem_URL).trim() : ""
             }));
 
             document.getElementById('header-subtitle').innerText = `Conectado. ${todasAsQuestoes.length} questões carregadas.`;
@@ -308,9 +314,6 @@
         return array;
     }
 
-    // ==========================================
-    // 2. INICIAR PROVA
-    // ==========================================
     function startQuiz() {
         if(todasAsQuestoes.length === 0) { alert("Nenhuma questão carregada."); return; }
         
@@ -336,17 +339,24 @@
         const qtd = parseInt(document.getElementById('qtd').value);
 
         let filtradas = todasAsQuestoes.filter(q => materia === "todas" ? true : q.subject === materia);
-        let p = shuffle(filtradas.filter(q => q.subject === "Língua Portuguesa"));
-        let m = shuffle(filtradas.filter(q => q.subject === "Matemática"));
-
         let finais = [];
+
+        // NOVA LÓGICA: Suporta múltiplas matérias dinamicamente
         if (materia === "todas") {
-            let qtdPM = Math.ceil(qtd / 2);
-            finais = [...p.slice(0, qtdPM), ...m.slice(0, qtdPM)];
+            let materiasUnicas = [...new Set(filtradas.map(q => q.subject))];
+            let qtdPorMateria = Math.ceil(qtd / materiasUnicas.length);
+
+            materiasUnicas.forEach(mat => {
+                let qMat = shuffle(filtradas.filter(q => q.subject === mat));
+                finais = [...finais, ...qMat.slice(0, qtdPorMateria)];
+            });
+            
+            finais = shuffle(finais).slice(0, qtd); // Embaralha tudo e corta no limite exato pedido
         } else {
-            finais = (materia === "Língua Portuguesa" ? p : m).slice(0, qtd);
+            finais = shuffle(filtradas).slice(0, qtd);
         }
 
+        // Ordena para que a exibição fique agrupada por matéria (blocos)
         finais.sort((a, b) => a.subject.localeCompare(b.subject));
         
         questoesAtuais = finais; 
@@ -369,9 +379,6 @@
         }, 1000);
     }
 
-    // ==========================================
-    // 3. RENDERIZAR AS QUESTÕES
-    // ==========================================
     function renderQuestions(lista) {
         let html = ""; let currentSubject = ""; 
         gabaritoGrid.innerHTML = "";
@@ -391,6 +398,11 @@
             
             let textoHtml = q.textoApoio ? `<details class="texto-apoio"><summary>Ler texto de apoio</summary><div class="texto-conteudo">${q.textoApoio}</div></details>` : "";
             
+            let imagemHtml = "";
+            if (q.imagem && q.imagem !== "") {
+                imagemHtml = `<img src="${q.imagem}" class="imagem-questao" alt="Imagem da questão">`;
+            }
+
             let optionsHtml = "";
             for (const [key, value] of Object.entries(q.options)) {
                 if(value && value !== "") { 
@@ -411,6 +423,7 @@
                     ${tagHtml}
                     ${textoHtml}
                     <div class="question-text">Questão ${num} - ${q.text}</div>
+                    ${imagemHtml}
                     <div class="options">${optionsHtml}</div>
                     <div class="feedback" id="feedback-${q.id}"></div>
                     ${recursoHtml}
@@ -421,9 +434,6 @@
         quizContainer.innerHTML = html;
     }
 
-    // ==========================================
-    // 4. CORREÇÃO E FINALIZAÇÃO
-    // ==========================================
     function checkAnswer(questionId, selected, correct, numVisual) {
         document.querySelectorAll(`input[name="q${questionId}"]`).forEach(opt => { opt.disabled = true; opt.parentElement.classList.add('disabled'); });
         
@@ -495,9 +505,6 @@
         el.style.display = (el.style.display === 'block') ? 'none' : 'block';
     }
 
-    // ==========================================
-    // 5. SALVAR NA NUVEM (MANUAL)
-    // ==========================================
     async function salvarNaNuvem() {
         const nomeInput = document.getElementById('student-name');
         const btnSave = document.getElementById('btn-save-name');
@@ -543,9 +550,6 @@
         }
     }
 
-    // ==========================================
-    // 6. MODO REVISÃO
-    // ==========================================
     function iniciarRevisao() {
         let erradas = respostasAluno.filter(r => !r.isCorrect).map(r => todasAsQuestoes.find(q => q.id === r.questaoId));
         if(erradas.length === 0) return;
@@ -564,9 +568,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ==========================================
-    // 7. PAINEL DE ACOMPANHAMENTO (CORREÇÃO DO GRÁFICO)
-    // ==========================================
     async function toggleDashboard() {
         const app = document.getElementById('app-view');
         const dash = document.getElementById('dashboard-view');
@@ -619,7 +620,6 @@
             return; 
         }
 
-        // A TABELA mostra da mais nova para a mais velha (ordem reversa)
         let dadosTabela = [...dadosFiltrados].reverse();
 
         dadosTabela.forEach((row) => {
@@ -633,8 +633,6 @@
             tbody.innerHTML += `<tr><td>${dataStr}</td><td>${row.Nome || 'Anônimo'}</td><td>${row.Materia}</td><td>${row.Acertos}</td><td>${row.Erros}</td><td>${row.Porcentagem}%</td><td>${row.Tempo_Gasto}</td></tr>`;
         });
 
-        // O GRÁFICO mostra da mais velha para a mais nova (evolução cronológica, esquerda para a direita)
-        // Pega os últimos 10 registros da ordem original (que é a ordem de inserção)
         let dadosGrafico = dadosFiltrados.slice(-10);
 
         let labels = []; let notas = []; let tempos = [];
@@ -643,7 +641,7 @@
             if(dataStr && dataStr.includes('-')) { 
                 let partes = dataStr.split('-');
                 if(partes.length === 3 && partes[0].length === 4) {
-                    dataStr = `${partes[2]}/${partes[1]}`; // Dia/Mês para encurtar
+                    dataStr = `${partes[2]}/${partes[1]}`;
                 }
             }
             labels.push(dataStr || row.Hora); 
@@ -701,9 +699,6 @@
         });
     }
 
-    // ==========================================
-    // 8. IMPRESSÃO
-    // ==========================================
     function imprimirProvaCompleta() {
         document.querySelectorAll('details').forEach(d => d.setAttribute('open', 'true'));
         document.body.classList.remove('print-report-only'); 
