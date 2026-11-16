@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado Cloud v2.8</title>
+    <title>Simulado Cloud v2.9</title>
     <!-- Chart.js para os gráficos do Painel -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -141,7 +141,7 @@
 <div class="container">
     <header>
         <div>
-            <h1>Simulado Cloud v2.8</h1>
+            <h1>Simulado Cloud v2.9</h1>
             <p style="margin: 5px 0 0; font-size: 0.9rem;" id="header-subtitle">Carregando banco de questões...</p>
         </div>
         <button class="header-btn" onclick="toggleDashboard()">📊 Painel</button>
@@ -156,6 +156,7 @@
                     <option value="Língua Portuguesa">Língua Portuguesa</option>
                     <option value="Matemática">Matemática</option>
                     <option value="Inglês">Inglês</option>
+                    <option value="Geografia">Geografia</option>
                 </select>
             </div>
             <div class="control-group">
@@ -341,7 +342,6 @@
         let filtradas = todasAsQuestoes.filter(q => materia === "todas" ? true : q.subject === materia);
         let finais = [];
 
-        // NOVA LÓGICA: Suporta múltiplas matérias dinamicamente
         if (materia === "todas") {
             let materiasUnicas = [...new Set(filtradas.map(q => q.subject))];
             let qtdPorMateria = Math.ceil(qtd / materiasUnicas.length);
@@ -351,12 +351,11 @@
                 finais = [...finais, ...qMat.slice(0, qtdPorMateria)];
             });
             
-            finais = shuffle(finais).slice(0, qtd); // Embaralha tudo e corta no limite exato pedido
+            finais = shuffle(finais).slice(0, qtd);
         } else {
             finais = shuffle(filtradas).slice(0, qtd);
         }
 
-        // Ordena para que a exibição fique agrupada por matéria (blocos)
         finais.sort((a, b) => a.subject.localeCompare(b.subject));
         
         questoesAtuais = finais; 
