@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado Cloud v2.9</title>
-    <!-- Chart.js para os gráficos do Painel -->
+    <title>Simulado Cloud v3.0 (Auto-Matérias)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -41,14 +40,7 @@
         details.texto-apoio summary::before { content: '📖'; margin-right: 8px; }
         .texto-conteudo { padding: 15px; font-size: 0.95rem; text-align: justify; background-color: white; }
         
-        .imagem-questao {
-            display: block;
-            max-width: 100%;
-            height: auto;
-            margin: 15px auto;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
+        .imagem-questao { display: block; max-width: 100%; height: auto; margin: 15px auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 
         .question-text { font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; }
         .options { display: flex; flex-direction: column; gap: 10px; }
@@ -141,7 +133,7 @@
 <div class="container">
     <header>
         <div>
-            <h1>Simulado Cloud v2.9</h1>
+            <h1>Simulado Cloud v3.0</h1>
             <p style="margin: 5px 0 0; font-size: 0.9rem;" id="header-subtitle">Carregando banco de questões...</p>
         </div>
         <button class="header-btn" onclick="toggleDashboard()">📊 Painel</button>
@@ -153,10 +145,7 @@
                 <label for="materia">Matéria:</label>
                 <select id="materia">
                     <option value="todas">Todas</option>
-                    <option value="Língua Portuguesa">Língua Portuguesa</option>
-                    <option value="Matemática">Matemática</option>
-                    <option value="Inglês">Inglês</option>
-                    <option value="Geografia">Geografia</option>
+                    <!-- As opções serão preenchidas via JavaScript -->
                 </select>
             </div>
             <div class="control-group">
@@ -297,6 +286,20 @@
                 imagem: q.Imagem_URL ? String(q.Imagem_URL).trim() : ""
             }));
 
+            // NOVO: Preenche o select de matérias automaticamente
+            const selectMateria = document.getElementById('materia');
+            let materiasUnicas = [...new Set(todasAsQuestoes.map(q => q.subject))].sort();
+            
+            // Limpa as opções antigas, exceto a "Todas"
+            selectMateria.innerHTML = '<option value="todas">Todas</option>';
+            
+            materiasUnicas.forEach(mat => {
+                let option = document.createElement('option');
+                option.value = mat;
+                option.text = mat;
+                selectMateria.appendChild(option);
+            });
+
             document.getElementById('header-subtitle').innerText = `Conectado. ${todasAsQuestoes.length} questões carregadas.`;
             document.getElementById('controls').style.display = 'flex';
         } catch (error) {
@@ -343,15 +346,15 @@
         let finais = [];
 
         if (materia === "todas") {
-            let materiasUnicas = [...new Set(filtradas.map(q => q.subject))];
-            let qtdPorMateria = Math.ceil(qtd / materiasUnicas.length);
+            let materiasUnicasFiltradas = [...new Set(filtradas.map(q => q.subject))];
+            let qtdPorMateria = Math.ceil(qtd / materiasUnicasFiltradas.length);
 
-            materiasUnicas.forEach(mat => {
+            materiasUnicasFiltradas.forEach(mat => {
                 let qMat = shuffle(filtradas.filter(q => q.subject === mat));
                 finais = [...finais, ...qMat.slice(0, qtdPorMateria)];
             });
             
-            finais = shuffle(finais).slice(0, qtd);
+            finais = shuffle(finais).slice(0, qtd); 
         } else {
             finais = shuffle(filtradas).slice(0, qtd);
         }
