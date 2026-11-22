@@ -1,723 +1,902 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado Cloud v3.0 (Auto-Matérias)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #2c3e50; --secondary: #34495e; --success: #27ae60; --error: #e74c3c;
-            --warning: #f39c12; --bg: #ecf0f1; --card-bg: #ffffff;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #333; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        
-        header { background-color: var(--primary); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
-        header h1 { margin: 0; font-size: 1.5rem; }
-        .header-btn { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .header-btn:hover { background: rgba(255,255,255,0.3); }
-        
-        .controls, .exam-toolbar, .dashboard-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: center; }
-        .control-group { display: flex; flex-direction: column; }
-        .control-group label { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: var(--primary); }
-        select, button, input[type="text"] { padding: 10px 15px; font-size: 1rem; border-radius: 5px; border: 1px solid #bdc3c7; cursor: pointer; }
-        button.start-btn { background-color: var(--primary); color: white; border: none; font-weight: bold; margin-top: 22px; transition: 0.2s; }
-        button.start-btn:hover { background-color: var(--secondary); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulado Cloud v4.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root { --primary:#2c3e50; --secondary:#34495e; --success:#27ae60; --error:#e74c3c; --warning:#f39c12; --bg:#ecf0f1; --card-bg:#fff; }
+* { box-sizing: border-box; }
+body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:var(--bg); color:#333; margin:0; padding:20px; padding-bottom:100px; }
+.container { max-width:900px; margin:0 auto; }
+.hidden { display:none !important; }
+header { background:var(--primary); color:#fff; padding:20px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; }
+header h1 { margin:0; font-size:1.5rem; }
+.header-btn { background:rgba(255,255,255,.2); border:1px solid #fff; color:#fff; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight:bold; }
+.header-btn:hover { background:rgba(255,255,255,.3); }
+.controls, .exam-toolbar, .dashboard-card { background:#fff; padding:20px; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 4px rgba(0,0,0,.05); }
+.controls { display:flex; flex-wrap:wrap; gap:15px; align-items:center; justify-content:center; }
+.control-group { display:flex; flex-direction:column; }
+.control-group label { font-size:.9rem; font-weight:bold; margin-bottom:5px; color:var(--primary); }
+select, button, input[type="text"] { padding:10px 15px; font-size:1rem; border-radius:5px; border:1px solid #bdc3c7; cursor:pointer; }
+select:disabled { background:#f2f2f2; cursor:not-allowed; }
+button.start-btn { background:var(--primary); color:#fff; border:none; font-weight:bold; margin-top:22px; }
+button.start-btn:hover { background:var(--secondary); }
 
-        .score-board { position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 1000; font-size: 1.1rem; font-weight: bold; border: 2px solid var(--primary); gap: 15px; align-items: center;}
-        .score-acertos { color: var(--success); } .score-erros { color: var(--error); } .timer-display { color: var(--warning); }
+/* Login */
+.login-card { background:#fff; max-width:440px; margin:30px auto; padding:25px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.05); }
+.login-tabs { display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap; }
+.tab { flex:1; padding:10px; border:1px solid #bdc3c7; background:#f8f9fa; border-radius:5px; font-weight:bold; color:var(--primary); }
+.tab.ativo { background:var(--primary); color:#fff; }
+.field { display:flex; flex-direction:column; margin-bottom:12px; }
+.field label { font-weight:bold; font-size:.9rem; color:var(--primary); margin-bottom:5px; }
+.field input, .field select { padding:10px; border:1px solid #bdc3c7; border-radius:5px; font-size:1rem; }
+.msg { margin-top:12px; font-weight:bold; color:var(--error); min-height:1em; }
+.msg.ok { color:var(--success); }
 
-        .subject-title { background-color: var(--secondary); color: white; padding: 12px 20px; border-radius: 8px; margin: 30px 0 20px; font-size: 1.2rem; text-align: center; text-transform: uppercase; }
-        .question-card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
-        
-        .tag-fonte { display: inline-block; background-color: #e74c3c; color: white; font-size: 0.75rem; padding: 3px 10px; border-radius: 4px; margin-bottom: 12px; font-weight: bold; letter-spacing: 0.5px; }
+/* Placar flutuante */
+.score-board { position:fixed; bottom:20px; right:20px; background:#fff; padding:15px 25px; border-radius:50px; box-shadow:0 5px 15px rgba(0,0,0,.2); display:none; z-index:1000; font-size:1.1rem; font-weight:bold; border:2px solid var(--primary); gap:15px; align-items:center; }
+.score-acertos { color:var(--success); } .score-erros { color:var(--error); } .timer-display { color:var(--warning); }
 
-        details.texto-apoio { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 15px; }
-        details.texto-apoio summary { background-color: #e9ecef; padding: 10px 15px; font-weight: bold; color: var(--primary); cursor: pointer; list-style: none; }
-        details.texto-apoio summary::-webkit-details-marker { display: none; }
-        details.texto-apoio summary::before { content: '📖'; margin-right: 8px; }
-        .texto-conteudo { padding: 15px; font-size: 0.95rem; text-align: justify; background-color: white; }
-        
-        .imagem-questao { display: block; max-width: 100%; height: auto; margin: 15px auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.subject-title { background:var(--secondary); color:#fff; padding:12px 20px; border-radius:8px; margin:30px 0 20px; font-size:1.2rem; text-align:center; text-transform:uppercase; }
+.question-card { background:var(--card-bg); padding:20px; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 4px rgba(0,0,0,.05); position:relative; }
+.tag-fonte { display:inline-block; background:var(--error); color:#fff; font-size:.75rem; padding:3px 10px; border-radius:4px; margin-bottom:12px; font-weight:bold; }
+details.texto-apoio { background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; margin-bottom:15px; }
+details.texto-apoio summary { background:#e9ecef; padding:10px 15px; font-weight:bold; color:var(--primary); cursor:pointer; list-style:none; }
+details.texto-apoio summary::-webkit-details-marker { display:none; }
+details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
+.texto-conteudo { padding:15px; font-size:.95rem; text-align:justify; background:#fff; }
+.imagem-questao { display:block; max-width:100%; height:auto; margin:15px auto; border-radius:6px; }
+.question-text { font-weight:bold; margin-bottom:15px; font-size:1.1rem; }
 
-        .question-text { font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; }
-        .options { display: flex; flex-direction: column; gap: 10px; }
-        .option { display: flex; align-items: center; padding: 10px 15px; border: 2px solid #bdc3c7; border-radius: 6px; cursor: pointer; background-color: #fff; transition: 0.2s; }
-        .option:hover:not(.disabled) { border-color: var(--primary); background-color: #f8f9fa; }
-        .option input[type="radio"] { margin-right: 10px; }
-        .option.disabled { cursor: default; }
-        .option.correct { border-color: var(--success); background-color: #d4edda; color: #155724; }
-        .option.incorrect { border-color: var(--error); background-color: #f8d7da; color: #721c24; }
-        .feedback { margin-top: 15px; padding: 10px; border-radius: 6px; font-weight: bold; display: none; }
-        .feedback.success { display: block; background-color: #d4edda; color: #155724; }
-        .feedback.error { display: block; background-color: #f8d7da; color: #721c24; }
+/* Alternativas (com opção de riscar) */
+.options { display:flex; flex-direction:column; gap:10px; }
+.option { display:flex; align-items:center; gap:8px; padding:8px 10px; border:2px solid #bdc3c7; border-radius:6px; background:#fff; transition:.2s; }
+.option:hover:not(.disabled) { border-color:var(--primary); background:#f8f9fa; }
+.option .opt-main { flex:1; display:flex; align-items:center; cursor:pointer; padding:4px 0; }
+.option.disabled .opt-main { cursor:default; }
+.option input[type="radio"] { margin-right:10px; }
+.option.eliminada { opacity:.55; background:#f4f6f7; }
+.option.eliminada .opt-main span { text-decoration:line-through; color:#95a5a6; }
+.option.correct { border-color:var(--success); background:#d4edda; color:#155724; }
+.option.incorrect { border-color:var(--error); background:#f8d7da; color:#721c24; }
+.btn-cortar { padding:4px 10px; font-size:.8rem; border:1px solid #bdc3c7; background:#fff; color:#7f8c8d; border-radius:4px; white-space:nowrap; }
+.btn-cortar:hover { border-color:var(--error); color:var(--error); }
+.btn-cortar:disabled { opacity:.3; cursor:default; }
+.feedback { margin-top:15px; padding:10px; border-radius:6px; font-weight:bold; display:none; }
+.feedback.success { display:block; background:#d4edda; color:#155724; }
+.feedback.error { display:block; background:#f8d7da; color:#721c24; }
+.btn-recurso { display:block; text-align:right; font-size:.8rem; color:#7f8c8d; text-decoration:none; margin-top:15px; }
+.btn-recurso:hover { color:var(--error); text-decoration:underline; }
 
-        .btn-recurso { display: block; text-align: right; font-size: 0.8rem; color: #7f8c8d; text-decoration: none; margin-top: 15px; }
-        .btn-recurso:hover { color: var(--error); text-decoration: underline; }
+/* Boletim */
+.result-card { display:none; background:#fff; padding:30px; border-radius:12px; text-align:center; box-shadow:0 10px 20px rgba(0,0,0,.1); border:3px solid var(--primary); max-width:700px; margin:40px auto 0; }
+.result-header-info { display:flex; justify-content:space-between; border-bottom:2px solid #eee; padding-bottom:15px; margin-bottom:20px; font-weight:bold; align-items:center; flex-wrap:wrap; gap:10px; }
+.name-save-group { display:flex; gap:10px; align-items:center; }
+.name-input { border:1px solid #bdc3c7; padding:8px; font-size:1rem; width:180px; border-radius:5px; }
+.btn-save-name { background:var(--success); color:#fff; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; }
+.btn-save-name:disabled { background:#95a5a6; cursor:not-allowed; }
+.result-stats { display:flex; justify-content:center; gap:20px; margin:20px 0; flex-wrap:wrap; }
+.stat-box { background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #ddd; min-width:120px; }
+.stat-value { font-size:1.5rem; font-weight:bold; display:block; margin-top:5px; }
+.score-big { font-size:2rem; font-weight:bold; color:var(--primary); margin:20px 0; }
+.tabela-respostas { width:100%; border-collapse:collapse; margin-top:20px; text-align:left; font-size:.95rem; }
+.tabela-respostas th, .tabela-respostas td { border:1px solid #bdc3c7; padding:8px 10px; text-align:center; }
+.tabela-respostas th { background:var(--primary); color:#fff; }
+.status-acerto { color:var(--success); font-weight:bold; } .status-erro { color:var(--error); font-weight:bold; }
+.row-conferencia { cursor:pointer; }
+.row-conferencia:hover { background:#e8f4f8 !important; }
+.explicacao-box { display:none; background:#fff3cd; border-left:4px solid #ffc107; padding:15px; text-align:left; margin-top:10px; font-size:.95rem; line-height:1.5; }
+.action-buttons { display:flex; flex-direction:column; gap:15px; margin-top:25px; align-items:center; }
+.save-card-btn, .review-btn { color:#fff; border:none; padding:15px 30px; font-size:1.1rem; font-weight:bold; border-radius:8px; width:100%; max-width:350px; }
+.save-card-btn { background:var(--success); }
+.review-btn { background:var(--warning); }
 
-        .result-card { display: none; background: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 3px solid var(--primary); max-width: 700px; margin: 40px auto 0; }
-        .result-header-info { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; font-weight: bold; align-items: center; flex-wrap: wrap; gap: 10px; }
-        
-        .name-save-group { display: flex; gap: 10px; align-items: center; }
-        .name-input { border: 1px solid #bdc3c7; padding: 8px; font-size: 1rem; width: 180px; border-radius: 5px; }
-        .btn-save-name { background-color: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-save-name:hover { background-color: #219653; }
-        .btn-save-name:disabled { background-color: #95a5a6; cursor: not-allowed; }
+/* Painel */
+#dashboard-view { display:none; }
+.filtro-aluno-box { display:flex; justify-content:center; flex-wrap:wrap; gap:15px; margin-bottom:20px; }
+.dashboard-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+.chart-container { position:relative; height:300px; width:100%; background:#fff; padding:15px; border-radius:8px; box-sizing:border-box; }
+@media (max-width:768px) { .dashboard-grid { grid-template-columns:1fr; } }
+.ranking-box { display:flex; justify-content:space-around; flex-wrap:wrap; gap:15px; margin:20px 0; }
+.podio-card { background:#fff; border:2px solid #ddd; padding:15px; border-radius:8px; text-align:center; min-width:150px; }
+.podio-1 { border-color:#f1c40f; background:#fffdf5; transform:scale(1.05); }
+.podio-2 { border-color:#bdc3c7; } .podio-3 { border-color:#e67e22; }
+.podio-pos { font-size:1.5rem; font-weight:bold; margin-bottom:5px; }
+.podio-nome { font-weight:bold; font-size:1.1rem; color:var(--primary); }
+.podio-nota { font-size:1.3rem; color:var(--success); font-weight:bold; margin-top:5px; }
 
-        .result-stats { display: flex; justify-content: center; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
-        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; min-width: 120px; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; display: block; margin-top: 5px; }
-        .score-big { font-size: 2rem; font-weight: bold; color: var(--primary); margin: 20px 0; }
-        
-        .tabela-respostas { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; font-size: 0.95rem; }
-        .tabela-respostas th, .tabela-respostas td { border: 1px solid #bdc3c7; padding: 8px 10px; text-align: center; }
-        .tabela-respostas th { background-color: var(--primary); color: white; }
-        .status-acerto { color: var(--success); font-weight: bold; } .status-erro { color: var(--error); font-weight: bold; }
-        
-        .row-conferencia { cursor: pointer; transition: background 0.2s; }
-        .row-conferencia:hover { background-color: #e8f4f8 !important; }
-        .explicacao-box { display: none; background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; text-align: left; margin-top: 10px; font-size: 0.95rem; line-height: 1.5; }
-        
-        .action-buttons { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; align-items: center; }
-        .save-card-btn { background-color: var(--success); color: white; border: none; padding: 15px 30px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; max-width: 350px; }
-        .review-btn { background-color: var(--warning); color: white; border: none; padding: 15px 30px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; max-width: 350px; }
-        
-        #dashboard-view { display: none; }
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .chart-container { position: relative; height: 300px; width: 100%; background: white; padding: 15px; border-radius: 8px; box-sizing: border-box; }
-        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
-        
-        .filtro-aluno-box { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .ranking-box { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin: 20px 0; }
-        .podio-card { background: #fff; border: 2px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; min-width: 150px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .podio-1 { border-color: #f1c40f; background: #fffdf5; transform: scale(1.05); }
-        .podio-2 { border-color: #bdc3c7; }
-        .podio-3 { border-color: #e67e22; }
-        .podio-pos { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
-        .podio-nome { font-weight: bold; font-size: 1.1rem; color: var(--primary); }
-        .podio-nota { font-size: 1.3rem; color: var(--success); font-weight: bold; margin-top: 5px; }
+.print-only { display:none; }
+.gabarito-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
+.gabarito-item { border:2px solid #000; padding:15px; text-align:center; font-weight:bold; }
 
-        .print-only { display: none; }
-        @media print {
-            body { background: white; color: black; padding: 0; }
-            header, .controls, .score-board, .exam-toolbar, .feedback, .option input[type="radio"], button, #dashboard-view, .btn-recurso, .name-save-group { display: none !important; }
-            .question-card { box-shadow: none; border: 1px solid #999; page-break-inside: avoid; margin-bottom: 25px; }
-            .subject-title { background-color: #ddd !important; color: black !important; border: 1px solid #999; page-break-before: always; }
-            .option { border: none; padding: 5px 0; }
-            .option.correct, .option.incorrect { background: none !important; border: none !important; color: black !important; }
-            details.texto-apoio { border: 1px solid #999; display: block !important; } details.texto-apoio summary { display: none !important; }
-            .texto-conteudo { display: block !important; padding: 10px; background: white; }
-            .tag-fonte { border: 1px solid black; color: black; background: none; }
-            .print-only { display: block !important; page-break-before: always; border-top: 2px solid black; margin-top: 50px; padding-top: 20px; }
-            .gabarito-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-            .gabarito-item { border: 2px solid #000; padding: 15px; text-align: center; font-weight: bold; }
-            body.print-report-only .result-card { display: block !important; box-shadow: none !important; border: 2px solid black !important; margin: 0 auto !important; padding: 30px !important; max-width: 100% !important; }
-            body.print-report-only .action-buttons { display: none !important; }
-            body.print-report-only .name-input { border-bottom: 1px solid black !important; border-top: none !important; border-left: none !important; border-right: none !important; }
-            .tabela-respostas th { background-color: #ddd !important; color: black !important; }
-            .tabela-respostas td, .tabela-respostas th { border: 1px solid black !important; padding: 5px !important; }
-            .explicacao-box { display: block !important; border: 1px solid black; }
-        }
-    </style>
+@media print {
+  body { background:#fff; color:#000; padding:0; }
+  header, .controls, .score-board, .exam-toolbar, .feedback, .option input[type="radio"], button, #dashboard-view, #login-view, .btn-recurso, .name-save-group { display:none !important; }
+  .question-card { box-shadow:none; border:1px solid #999; page-break-inside:avoid; margin-bottom:25px; }
+  .subject-title { background:#ddd !important; color:#000 !important; border:1px solid #999; page-break-before:always; }
+  .option { border:none; padding:5px 0; }
+  .option.correct, .option.incorrect { background:none !important; border:none !important; color:#000 !important; }
+  .option.eliminada { opacity:1; background:none; }
+  details.texto-apoio { border:1px solid #999; display:block !important; }
+  details.texto-apoio summary { display:none !important; }
+  .texto-conteudo { display:block !important; padding:10px; background:#fff; }
+  .tag-fonte { border:1px solid #000; color:#000; background:none; }
+  .print-only { display:block !important; page-break-before:always; border-top:2px solid #000; margin-top:50px; padding-top:20px; }
+  .gabarito-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
+  body.print-report-only .result-card { display:block !important; box-shadow:none !important; border:2px solid #000 !important; margin:0 auto !important; padding:30px !important; max-width:100% !important; }
+  body.print-report-only .action-buttons { display:none !important; }
+  .tabela-respostas th { background:#ddd !important; color:#000 !important; }
+  .tabela-respostas td, .tabela-respostas th { border:1px solid #000 !important; padding:5px !important; }
+  .explicacao-box { display:block !important; border:1px solid #000; }
+}
+</style>
 </head>
 <body>
-
 <div class="score-board" id="score-board">
-    <span class="timer-display">⏱️ <span id="timer-val">00:00</span></span> |
-    <span class="score-acertos">✅ <span id="val-acertos">0</span></span> | 
-    <span class="score-erros">❌ <span id="val-erros">0</span></span>
+  <span class="timer-display">⏱️ <span id="timer-val">00:00</span></span> |
+  <span class="score-acertos">✅ <span id="val-acertos">0</span></span> |
+  <span class="score-erros">❌ <span id="val-erros">0</span></span>
 </div>
 
-<div class="container">
-    <header>
-        <div>
-            <h1>Simulado Cloud v3.0</h1>
-            <p style="margin: 5px 0 0; font-size: 0.9rem;" id="header-subtitle">Carregando banco de questões...</p>
-        </div>
-        <button class="header-btn" onclick="toggleDashboard()">📊 Painel</button>
-    </header>
-
-    <div id="app-view">
-        <div class="controls" id="controls" style="display: none;">
-            <div class="control-group">
-                <label for="materia">Matéria:</label>
-                <select id="materia">
-                    <option value="todas">Todas</option>
-                    <!-- As opções serão preenchidas via JavaScript -->
-                </select>
-            </div>
-            <div class="control-group">
-                <label for="qtd">Questões:</label>
-                <select id="qtd">
-                    <option value="5">5 Questões</option>
-                    <option value="10" selected>10 Questões</option>
-                    <option value="20">20 Questões</option>
-                    <option value="30">30 Questões</option>
-                    <option value="999">Todas Disponíveis</option>
-                </select>
-            </div>
-            <button class="start-btn" onclick="startQuiz()">Gerar Simulado</button>
-        </div>
-
-        <div id="quiz-container"></div>
-
-        <div class="exam-toolbar" id="exam-toolbar">
-            <p>Prova gerada! Use os botões para imprimir:</p>
-            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                <button class="start-btn" onclick="imprimirProvaCompleta()" style="margin-top:0;">🖨️ Imprimir Prova + Gabarito</button>
-                <button class="start-btn" onclick="imprimirApenasGabarito()" style="margin-top:0;">🔑 Só o Gabarito</button>
-            </div>
-        </div>
-
-        <div class="result-card" id="result-card">
-            <h2>🏆 Boletim</h2>
-            
-            <div class="result-header-info">
-                <div class="name-save-group">
-                    <input type="text" class="name-input" placeholder="Digite seu nome" id="student-name">
-                    <button class="btn-save-name" id="btn-save-name" onclick="salvarNaNuvem()">💾 Salvar Nota</button>
-                </div>
-                <div>Data: <span id="current-date"></span></div>
-            </div>
-            
-            <div class="result-stats">
-                <div class="stat-box" style="color: var(--success);">Acertos<span class="stat-value" id="final-acertos">0</span></div>
-                <div class="stat-box" style="color: var(--error);">Erros<span class="stat-value" id="final-erros">0</span></div>
-                <div class="stat-box" style="color: var(--warning);">Tempo<span class="stat-value" id="final-time">00:00</span></div>
-            </div>
-            <div class="score-big" id="final-porcentagem">Aproveitamento: 0%</div>
-            
-            <h3>📝 Conferência de Respostas <br><span style="font-size: 0.8rem; font-weight: normal; color: #7f8c8d;">(Clique na linha para ver a resolução)</span></h3>
-            <table class="tabela-respostas">
-                <thead><tr><th>Questão</th><th>Sua Resposta</th><th>Correta</th><th>Resultado</th></tr></thead>
-                <tbody id="tabela-corpo"></tbody>
-            </table>
-
-            <div class="action-buttons">
-                <button class="review-btn" id="btn-review" onclick="iniciarRevisao()">🔁 Revisar Erros</button>
-                <button class="save-card-btn" onclick="salvarCartaoResposta()">💾 Salvar Cartão Resposta (PDF)</button>
-                <button class="start-btn" style="background: white; color: var(--primary); border: 2px solid var(--primary); margin-top:0;" onclick="window.location.reload()">🔄 Novo Simulado</button>
-            </div>
-        </div>
+<!-- ===== LOGIN ===== -->
+<div class="container hidden" id="login-view">
+  <header><div><h1>Simulado Cloud v4.0</h1><p style="margin:5px 0 0;font-size:.9rem">Acesso por autorização</p></div></header>
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="tab ativo" id="tab-entrar" onclick="trocarTab('entrar')">Já tenho acesso</button>
+      <button class="tab" id="tab-solicitar" onclick="trocarTab('solicitar')">Pedir acesso</button>
+      <button class="tab" id="tab-admin" onclick="trocarTab('admin')">Administração</button>
     </div>
 
-    <!-- Painel de Acompanhamento -->
-    <div id="dashboard-view">
-        <div class="dashboard-card">
-            <h2 style="margin-top: 0; color: var(--primary); text-align: center;">📊 Painel de Evolução</h2>
-            
-            <div class="filtro-aluno-box">
-                <label for="filtro-aluno" style="font-weight: bold; align-self: center;">Filtrar Aluno:</label>
-                <select id="filtro-aluno" onchange="atualizarDashboard()">
-                    <option value="todos">Ver Todos</option>
-                </select>
-            </div>
+    <div id="form-entrar">
+      <div class="field"><label for="l-email">E-mail</label><input id="l-email" type="email"></div>
+      <div class="field"><label for="l-codigo">Código de acesso (está no e-mail de autorização)</label><input id="l-codigo" type="text"></div>
+      <button class="start-btn" style="margin-top:5px;width:100%" onclick="entrarAluno()">Entrar</button>
+    </div>
 
-            <h3 style="text-align: center; color: var(--secondary);">🏅 Pódio Geral (Top 3 Acertos)</h3>
-            <div class="ranking-box" id="ranking-box"></div>
+    <div id="form-solicitar" class="hidden">
+      <div class="field"><label for="s-nome">Nome do aluno</label><input id="s-nome" type="text"></div>
+      <div class="field"><label for="s-email">E-mail do responsável</label><input id="s-email" type="email"></div>
+      <div class="field"><label for="s-serie">Ano escolar</label><select id="s-serie"></select></div>
+      <button class="start-btn" style="margin-top:5px;width:100%" onclick="solicitarAcesso()">Enviar pedido</button>
+    </div>
 
-            <div class="dashboard-grid">
-                <div class="chart-container"><canvas id="notasChart"></canvas></div>
-                <div class="chart-container"><canvas id="tempoChart"></canvas></div>
-            </div>
+    <div id="form-admin" class="hidden">
+      <div class="field"><label for="a-chave">Chave de administração</label><input id="a-chave" type="password"></div>
+      <button class="start-btn" style="margin-top:5px;width:100%" onclick="entrarAdmin()">Entrar</button>
+    </div>
 
-            <h3 style="margin-top: 30px; text-align: center;">Histórico Detalhado</h3>
-            <div style="overflow-x: auto;">
-                <table class="tabela-respostas" id="tabela-historico">
-                    <thead><tr><th>Data</th><th>Aluno</th><th>Matéria</th><th>Acertos</th><th>Erros</th><th>%</th><th>Tempo</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+    <div id="login-msg" class="msg"></div>
+  </div>
+</div>
+
+<!-- ===== APLICAÇÃO ===== -->
+<div class="container hidden" id="app-root">
+  <header>
+    <div>
+      <h1>Simulado Cloud v4.0</h1>
+      <p style="margin:5px 0 0;font-size:.9rem" id="header-subtitle">Carregando banco de questões...</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="header-btn" onclick="toggleDashboard()">📊 Painel</button>
+      <button class="header-btn" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <div id="app-view">
+    <div class="controls" id="controls" style="display:none">
+      <div class="control-group">
+        <label for="materia">Matéria:</label>
+        <select id="materia"><option value="todas">Todas</option></select>
+      </div>
+      <div class="control-group hidden" id="grupo-serie-admin">
+        <label for="serie">Ano escolar:</label>
+        <select id="serie"><option value="todas">Todos os anos</option></select>
+      </div>
+      <div class="control-group">
+        <label for="qtd">Questões:</label>
+        <select id="qtd">
+          <option value="5">5 Questões</option>
+          <option value="10" selected>10 Questões</option>
+          <option value="20">20 Questões</option>
+          <option value="30">30 Questões</option>
+          <option value="999">Todas Disponíveis</option>
+        </select>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Gerar Simulado</button>
+    </div>
+
+    <div id="quiz-container"></div>
+
+    <div class="exam-toolbar" id="exam-toolbar" style="display:none">
+      <p>Prova gerada! Use os botões para imprimir:</p>
+      <div style="display:flex;justify-content:center;gap:15px;flex-wrap:wrap">
+        <button class="start-btn" onclick="imprimirProvaCompleta()" style="margin-top:0;">🖨️ Imprimir Prova + Gabarito</button>
+        <button class="start-btn" onclick="imprimirApenasGabarito()" style="margin-top:0;">🔑 Só o Gabarito</button>
+      </div>
+    </div>
+
+    <div class="result-card" id="result-card">
+      <h2>🏆 Boletim</h2>
+      <div class="result-header-info">
+        <div class="name-save-group">
+          <input type="text" class="name-input" placeholder="Digite seu nome" id="student-name">
+          <button class="btn-save-name" id="btn-save-name" onclick="salvarNaNuvem()">💾 Salvar Nota</button>
         </div>
-    </div>
+        <div>Data: <span id="current-date"></span></div>
+      </div>
+      <div class="result-stats">
+        <div class="stat-box" style="color:var(--success);">Acertos<span class="stat-value" id="final-acertos">0</span></div>
+        <div class="stat-box" style="color:var(--error);">Erros<span class="stat-value" id="final-erros">0</span></div>
+        <div class="stat-box" style="color:var(--warning);">Tempo<span class="stat-value" id="final-time">00:00</span></div>
+      </div>
+      <div class="score-big" id="final-porcentagem">Aproveitamento: 0%</div>
 
-    <div class="print-only" id="print-gabarito">
-        <h2>GABARITO OFICIAL</h2>
-        <div class="gabarito-grid" id="gabarito-grid"></div>
+      <h3>📝 Conferência de Respostas <br><span style="font-size:.8rem;font-weight:normal;color:#7f8c8d;">(Clique na linha para ver a resolução)</span></h3>
+      <table class="tabela-respostas">
+        <thead><tr><th>Questão</th><th>Sua Resposta</th><th>Correta</th><th>Resultado</th></tr></thead>
+        <tbody id="tabela-corpo"></tbody>
+      </table>
+
+      <div class="action-buttons">
+        <button class="review-btn" id="btn-review" onclick="iniciarRevisao()">🔁 Revisar Erros</button>
+        <button class="save-card-btn" onclick="salvarCartaoResposta()">💾 Salvar Cartão Resposta (PDF)</button>
+        <button class="start-btn" style="background:#fff;color:var(--primary);border:2px solid var(--primary);margin-top:0;" onclick="window.location.reload()">🔄 Novo Simulado</button>
+      </div>
     </div>
+  </div>
+
+  <!-- ===== PAINEL ===== -->
+  <div id="dashboard-view">
+    <div class="dashboard-card">
+      <h2 style="margin-top:0;color:var(--primary);text-align:center;">📊 Painel de Evolução</h2>
+
+      <div class="filtro-aluno-box">
+        <div class="control-group"><label for="f-serie">Ano:</label><select id="f-serie" onchange="atualizarPainel()"></select></div>
+        <div class="control-group"><label for="f-pessoa">Pessoa:</label><select id="f-pessoa" onchange="atualizarPainel()"></select></div>
+        <div class="control-group"><label for="f-materia">Disciplina:</label><select id="f-materia" onchange="atualizarPainel()"></select></div>
+      </div>
+
+      <div id="bloco-podio">
+        <h3 style="text-align:center;color:var(--secondary);">🏅 Pódio Geral (melhor aproveitamento)</h3>
+        <div class="ranking-box" id="ranking-box"></div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="chart-container"><canvas id="chartEvolPct"></canvas></div>
+        <div class="chart-container"><canvas id="chartEvolTempo"></canvas></div>
+        <div class="chart-container"><canvas id="chartComparPct"></canvas></div>
+        <div class="chart-container"><canvas id="chartComparTempo"></canvas></div>
+      </div>
+
+      <h3 style="margin-top:30px;text-align:center;">Histórico Detalhado</h3>
+      <div style="overflow-x:auto;">
+        <table class="tabela-respostas" id="tabela-historico">
+          <thead><tr><th>Data</th><th>Aluno</th><th>Matéria</th><th>Acertos</th><th>Erros</th><th>%</th><th>Tempo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-only" id="print-gabarito">
+    <h2>GABARITO OFICIAL</h2>
+    <div class="gabarito-grid" id="gabarito-grid"></div>
+  </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyjiZ6DOUnSn7g1CCw-woAPwKvgAynczkKJAK_vajbQFmiWLLUfj0BrtenKlLCpf5HV4w/exec"; 
-    const LINK_RECURSO = "https://wa.me/5569999999999?text=Ola,%20encontrei%20um%20erro%20na%20questao:%20"; 
+// ===== CONFIGURAÇÃO =====
+// Mantenha a mesma URL do Apps Script: em "Gerenciar implantações" edite a implantação atual e publique uma nova versão.
+const API_URL = "https://script.google.com/macros/s/AKfycbyjiZ6DOUnSn7g1CCw-woAPwKvgAynczkKJAK_vajbQFmiWLLUfj0BrtenKlLCpf5HV4w/exec";
+const LINK_RECURSO = "https://wa.me/5569999999999?text=Ola,%20encontrei%20um%20erro%20na%20questao:%20";
+const SESSAO_KEY = "simuladoCloudSessao";
+const SERIES_CADASTRO = [4, 5, 6, 7, 8, 9];
 
-    let todasAsQuestoes = []; 
-    let questoesAtuais = [];
-    let totalQuestoes = 0, respondidas = 0, acertos = 0, erros = 0;
-    let respostasAluno = [];
-    let timerInterval, startTime, finalTimeFormatted = "00:00";
-    let chartNotas, chartTempo;
-    let historicoGeral = []; 
+// ===== ESTADO =====
+let sessao = null;
+let todasAsQuestoes = [], questoesAtuais = [], respostasAluno = [];
+let totalQuestoes = 0, respondidas = 0, acertos = 0, erros = 0;
+let timerInterval, startTime, ultimoMarco = 0, finalTimeFormatted = "00:00";
+let registros = [];
+const charts = {};
 
-    const quizContainer = document.getElementById('quiz-container');
-    const controls = document.getElementById('controls');
-    const scoreBoard = document.getElementById('score-board');
-    const examToolbar = document.getElementById('exam-toolbar');
-    const resultCard = document.getElementById('result-card');
-    const tabelaCorpo = document.getElementById('tabela-corpo');
-    const btnReview = document.getElementById('btn-review');
-    const gabaritoGrid = document.getElementById('gabarito-grid');
+const $ = id => document.getElementById(id);
+const pct = (a, t) => t ? Math.round(a / t * 100) : 0;
+const gabaritoGrid = () => $('gabarito-grid');
+const quizContainer = () => $('quiz-container');
 
-    async function carregarQuestoes() {
-        try {
-            const response = await fetch(API_URL + "?action=questoes");
-            const data = await response.json();
-            
-            if(data.error) { 
-                document.getElementById('header-subtitle').innerText = "Erro: " + data.error; 
-                return; 
-            }
+// ===== UTILITÁRIOS =====
+function serieNum(s) { const m = String(s ?? '').match(/\d+/); return m ? Number(m[0]) : null; }
+function rotuloSerie(n) { return n ? `${n}º ano` : 'Geral'; }
+function fmtTempo(seg) {
+  seg = Math.round(seg || 0);
+  return `${String(Math.floor(seg / 60)).padStart(2, '0')}:${String(seg % 60).padStart(2, '0')}`;
+}
+function shuffle(array) {
+  let i = array.length, r;
+  while (i !== 0) {
+    r = Math.floor(Math.random() * i); i--;
+    [array[i], array[r]] = [array[r], array[i]];
+  }
+  return array;
+}
+// Lê o tempo de qualquer formato que chegue da planilha (segundos, "mm:ss", "hh:mm:ss" ou data ISO)
+function tempoParaSegundos(r) {
+  if (r.Tempo_Segundos !== undefined && r.Tempo_Segundos !== '' && !isNaN(Number(r.Tempo_Segundos))) return Number(r.Tempo_Segundos);
+  const v = r.Tempo_Gasto;
+  if (v instanceof Date) return v.getHours() * 3600 + v.getMinutes() * 60 + v.getSeconds();
+  const s = String(v ?? '');
+  let m = s.match(/T(\d{2}):(\d{2}):(\d{2})/);
+  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+  m = s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+  if (m) return m[3] !== undefined ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
+  return 0;
+}
+function normalizaRegistro(r) {
+  const ds = String(r.Data ?? '');
+  const iso = (ds.match(/^\d{4}-\d{2}-\d{2}/) || [''])[0];
+  const hora = String(r.Hora ?? '').slice(0, 5);
+  const a = Number(r.Acertos) || 0, e = Number(r.Erros) || 0;
+  return {
+    data: iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : ds,
+    ts: iso ? new Date(`${iso}T${hora || '00:00'}:00`).getTime() : 0,
+    nome: r.Nome || 'Anônimo',
+    materia: r.Materia || '—',
+    serie: serieNum(r.Serie),
+    acertos: a, erros: e, total: a + e,
+    segundos: tempoParaSegundos(r),
+    sessao: String(r.Sessao || (ds + ' ' + hora))
+  };
+}
 
-            todasAsQuestoes = data.map(q => ({
-                id: Number(q.ID), 
-                subject: String(q.Materia).trim(), 
-                textoApoio: q.Texto_Apoio ? String(q.Texto_Apoio).trim() : "",
-                text: String(q.Pergunta).trim(),
-                options: { 
-                    A: q.Opcao_A, B: q.Opcao_B, C: q.Opcao_C, D: q.Opcao_D, E: q.Opcao_E 
-                },
-                correct: String(q.Resposta_Correta).trim().toUpperCase(),
-                instituicao: (q.Instituicao || q['Instituição'] || "Geral").trim(),
-                ano: q.Ano ? String(q.Ano).trim() : "",
-                serie: q.Serie ? String(q.Serie).trim() : "",
-                explicacao: q.Explicacao ? String(q.Explicacao).trim() : "",
-                imagem: q.Imagem_URL ? String(q.Imagem_URL).trim() : ""
-            }));
+// ===== COMUNICAÇÃO COM O SERVIDOR =====
+async function chamar(acao, corpo = {}) {
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ acao, ...corpo })
+    });
+    return await r.json();
+  } catch (e) {
+    return { ok: false, msg: 'Falha de conexão com o servidor.', error: 'Falha de conexão com o servidor.' };
+  }
+}
+function credenciais() {
+  return sessao.tipo === 'admin' ? { chave: sessao.chave } : { email: sessao.email, codigo: sessao.codigo };
+}
+function api(acao, corpo = {}) { return chamar(acao, { ...credenciais(), ...corpo }); }
 
-            // NOVO: Preenche o select de matérias automaticamente
-            const selectMateria = document.getElementById('materia');
-            let materiasUnicas = [...new Set(todasAsQuestoes.map(q => q.subject))].sort();
-            
-            // Limpa as opções antigas, exceto a "Todas"
-            selectMateria.innerHTML = '<option value="todas">Todas</option>';
-            
-            materiasUnicas.forEach(mat => {
-                let option = document.createElement('option');
-                option.value = mat;
-                option.text = mat;
-                selectMateria.appendChild(option);
-            });
+// ===== LOGIN =====
+function mostrar(v) {
+  $('login-view').classList.toggle('hidden', v !== 'login');
+  $('app-root').classList.toggle('hidden', v !== 'app');
+}
+function msg(id, texto, ok = false) {
+  const el = $(id); el.textContent = texto; el.classList.toggle('ok', ok);
+}
+function trocarTab(t) {
+  ['entrar', 'solicitar', 'admin'].forEach(x => {
+    $('form-' + x).classList.toggle('hidden', x !== t);
+    $('tab-' + x).classList.toggle('ativo', x === t);
+  });
+  msg('login-msg', '');
+}
+function salvarSessao(s) {
+  sessao = s;
+  sessionStorage.setItem(SESSAO_KEY, JSON.stringify(s));
+  iniciarApp();
+}
+async function entrarAluno() {
+  const email = $('l-email').value.trim().toLowerCase();
+  const codigo = $('l-codigo').value.trim().toUpperCase();
+  if (!email || !codigo) { msg('login-msg', 'Informe e-mail e código.'); return; }
+  msg('login-msg', 'Verificando...', true);
+  const r = await chamar('entrar', { email, codigo });
+  if (!r.ok) { msg('login-msg', r.msg || 'Não foi possível entrar.'); return; }
+  salvarSessao({ tipo: 'aluno', email, codigo, nome: r.nome, serie: r.serie });
+}
+async function entrarAdmin() {
+  const chave = $('a-chave').value;
+  const r = await chamar('admin_check', { chave });
+  if (!r.ok) { msg('login-msg', 'Chave inválida.'); return; }
+  salvarSessao({ tipo: 'admin', chave });
+}
+async function solicitarAcesso() {
+  const nome = $('s-nome').value.trim();
+  const email = $('s-email').value.trim().toLowerCase();
+  const serie = $('s-serie').value;
+  if (!nome || !email || !serie) { msg('login-msg', 'Preencha nome, e-mail e ano escolar.'); return; }
+  msg('login-msg', 'Enviando pedido...', true);
+  const r = await chamar('solicitar', { nome, email, serie });
+  msg('login-msg', r.msg || 'Erro ao enviar pedido.', !!r.ok);
+}
+function sair() {
+  sessionStorage.removeItem(SESSAO_KEY);
+  location.reload();
+}
 
-            document.getElementById('header-subtitle').innerText = `Conectado. ${todasAsQuestoes.length} questões carregadas.`;
-            document.getElementById('controls').style.display = 'flex';
-        } catch (error) {
-            document.getElementById('header-subtitle').innerText = "Erro de conexão com o banco de dados.";
-            console.error(error);
-        }
+// ===== INÍCIO =====
+async function iniciarApp() {
+  mostrar('app');
+  const admin = sessao.tipo === 'admin';
+  $('header-subtitle').innerText = admin ? 'Administração' : `Aluno(a): ${sessao.nome} • ${rotuloSerie(sessao.serie)}`;
+  $('app-view').style.display = 'block';
+  $('dashboard-view').style.display = 'none';
+  await carregarQuestoes();
+}
+window.addEventListener('DOMContentLoaded', () => {
+  $('s-serie').innerHTML = '<option value="">Selecione...</option>' +
+    SERIES_CADASTRO.map(s => `<option value="${s}">${s}º ano</option>`).join('');
+  sessao = JSON.parse(sessionStorage.getItem(SESSAO_KEY) || 'null');
+  if (sessao) iniciarApp(); else mostrar('login');
+});
+
+// ===== QUESTÕES E PROVA =====
+async function carregarQuestoes() {
+  const d = await api('questoes');
+  if (d.error) { $('header-subtitle').innerText = 'Erro: ' + d.error; return false; }
+
+  todasAsQuestoes = d.map(q => ({
+    id: Number(q.ID),
+    subject: String(q.Materia).trim(),
+    serieN: serieNum(q.Serie),
+    serie: q.Serie ? String(q.Serie).trim() : '',
+    textoApoio: q.Texto_Apoio ? String(q.Texto_Apoio).trim() : '',
+    text: String(q.Pergunta).trim(),
+    options: { A: q.Opcao_A, B: q.Opcao_B, C: q.Opcao_C, D: q.Opcao_D, E: q.Opcao_E },
+    correct: String(q.Resposta_Correta).trim().toUpperCase(),
+    instituicao: String(q.Instituicao || q['Instituição'] || 'Geral').trim(),
+    ano: q.Ano ? String(q.Ano).trim() : '',
+    explicacao: q.Explicacao ? String(q.Explicacao).trim() : '',
+    imagem: q.Imagem_URL ? String(q.Imagem_URL).trim() : ''
+  }));
+
+  const materias = [...new Set(todasAsQuestoes.map(q => q.subject))].sort();
+  $('materia').innerHTML = '<option value="todas">Todas</option>' +
+    materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  if (sessao.tipo === 'admin') {
+    const series = [...new Set(todasAsQuestoes.map(q => q.serieN).filter(Boolean))].sort((a, b) => a - b);
+    $('serie').innerHTML = '<option value="todas">Todos os anos</option>' +
+      series.map(s => `<option value="${s}">${rotuloSerie(s)}</option>`).join('');
+    $('grupo-serie-admin').classList.remove('hidden');
+  }
+
+  $('header-subtitle').innerText = sessao.tipo === 'admin'
+    ? `Administração • ${todasAsQuestoes.length} questões carregadas`
+    : `Aluno(a): ${sessao.nome} • ${rotuloSerie(sessao.serie)} • ${todasAsQuestoes.length} questões`;
+  $('controls').style.display = 'flex';
+  return true;
+}
+
+function startQuiz() {
+  if (!todasAsQuestoes.length) { alert('Nenhuma questão carregada.'); return; }
+
+  const materia = $('materia').value;
+  const qtd = parseInt($('qtd').value);
+  // Aluno(a): ano fixo, vindo da autorização. Administração: escolhe no seletor.
+  const serieSel = sessao.tipo === 'admin' ? $('serie').value : String(sessao.serie);
+
+  const base = todasAsQuestoes.filter(q =>
+    (materia === 'todas' || q.subject === materia) &&
+    (serieSel === 'todas' || String(q.serieN) === serieSel));
+  if (!base.length) { alert('Sem questões para este filtro.'); return; }
+
+  let finais = [];
+  if (materia === 'todas') {
+    const mats = [...new Set(base.map(q => q.subject))];
+    const porMat = Math.ceil(qtd / mats.length);
+    mats.forEach(m => { finais.push(...shuffle(base.filter(q => q.subject === m)).slice(0, porMat)); });
+    finais = shuffle(finais).slice(0, qtd);
+  } else {
+    finais = shuffle(base).slice(0, qtd);
+  }
+  finais.sort((a, b) => a.subject.localeCompare(b.subject));
+
+  questoesAtuais = finais;
+  totalQuestoes = finais.length;
+
+  $('controls').style.display = 'none';
+  $('exam-toolbar').style.display = 'block';
+  $('result-card').style.display = 'none';
+  acertos = 0; erros = 0; respondidas = 0; respostasAluno = [];
+  $('val-acertos').innerText = 0; $('val-erros').innerText = 0;
+
+  const btnSave = $('btn-save-name');
+  btnSave.disabled = false;
+  btnSave.innerText = '💾 Salvar Nota';
+  btnSave.style.backgroundColor = '';
+  const nomeInput = $('student-name');
+  nomeInput.value = sessao.tipo === 'aluno' ? sessao.nome : '';
+  nomeInput.disabled = sessao.tipo === 'aluno';
+  $('current-date').innerText = new Date().toLocaleDateString('pt-BR');
+
+  $('score-board').style.display = 'flex';
+  startTimer();
+  renderQuestions(finais);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startTimer() {
+  startTime = Date.now();
+  ultimoMarco = startTime;
+  clearInterval(timerInterval);
+  $('timer-val').innerText = '00:00';
+  timerInterval = setInterval(() => {
+    $('timer-val').innerText = fmtTempo(Math.floor((Date.now() - startTime) / 1000));
+  }, 1000);
+}
+
+function renderQuestions(lista) {
+  let html = '', atual = '';
+  gabaritoGrid().innerHTML = '';
+
+  lista.forEach((q, i) => {
+    const num = i + 1;
+    if (q.subject !== atual) { atual = q.subject; html += `<div class="subject-title">${atual}</div>`; }
+
+    const tags = [q.instituicao, q.ano, q.serie ? `• ${q.serie}` : ''].filter(Boolean).join(' ');
+    const tagHtml = tags ? `<div class="tag-fonte">${tags}</div>` : '';
+    const apoio = q.textoApoio ? `<details class="texto-apoio"><summary>Ler texto de apoio</summary><div class="texto-conteudo">${q.textoApoio}</div></details>` : '';
+    const img = q.imagem ? `<img src="${q.imagem}" class="imagem-questao" alt="Imagem da questão">` : '';
+
+    let opts = '';
+    for (const [k, v] of Object.entries(q.options)) {
+      if (!v) continue;
+      opts += `
+        <div class="option" id="label-${q.id}-${k}">
+          <label class="opt-main">
+            <input type="radio" name="q${q.id}" value="${k}" onchange="checkAnswer(${q.id}, '${k}', ${num})">
+            <span><strong>${k})</strong> ${v}</span>
+          </label>
+          <button type="button" class="btn-cortar" title="Riscar esta alternativa" onclick="toggleCortar(this)">✂️ riscar</button>
+        </div>`;
     }
 
-    function shuffle(array) {
-        let currentIndex = array.length, randomIndex;
-        while (currentIndex !== 0) {
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex--;
-            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-        }
-        return array;
+    const link = `${LINK_RECURSO}${q.id}%20(Instituicao:%20${q.instituicao})`;
+    html += `
+      <div class="question-card">
+        ${tagHtml}${apoio}
+        <div class="question-text">Questão ${num} - ${q.text}</div>
+        ${img}
+        <div class="options">${opts}</div>
+        <div class="feedback" id="feedback-${q.id}"></div>
+        <a href="${link}" target="_blank" class="btn-recurso">⚠️ Encontrou erro nesta questão? Avise aqui.</a>
+      </div>`;
+    gabaritoGrid().innerHTML += `<div class="gabarito-item">Questão ${num}: ${q.correct}</div>`;
+  });
+  quizContainer().innerHTML = html;
+}
+
+// Riscar alternativa: não seleciona a resposta, só marca como descartada
+function toggleCortar(btn) {
+  btn.closest('.option').classList.toggle('eliminada');
+}
+
+function checkAnswer(questionId, selecionada, numVisual) {
+  const q = questoesAtuais.find(x => x.id === questionId);
+  const correta = q.correct;
+
+  document.querySelectorAll(`input[name="q${questionId}"]`).forEach(inp => inp.disabled = true);
+  document.querySelectorAll(`[id^="label-${questionId}-"]`).forEach(el => {
+    el.classList.add('disabled');
+    el.querySelector('.btn-cortar').disabled = true;
+  });
+
+  const feedback = document.getElementById(`feedback-${questionId}`);
+  const divSel = document.getElementById(`label-${questionId}-${selecionada}`);
+  const divCorr = document.getElementById(`label-${questionId}-${correta}`);
+  const acertou = selecionada === correta;
+
+  // Tempo desta questão = intervalo desde a resposta anterior
+  const agora = Date.now();
+  const segundos = Math.round((agora - ultimoMarco) / 1000);
+  ultimoMarco = agora;
+  respondidas++;
+
+  if (acertou) {
+    acertos++;
+    divSel.classList.add('correct');
+    feedback.className = 'feedback success';
+    feedback.innerHTML = '✅ <strong>Acertou!</strong>';
+  } else {
+    erros++;
+    divSel.classList.add('incorrect');
+    if (divCorr) divCorr.classList.add('correct');
+    feedback.className = 'feedback error';
+    feedback.innerHTML = `❌ <strong>Errou!</strong> Correta: <strong>${correta}</strong>.`;
+  }
+
+  respostasAluno.push({ questaoId: questionId, numVisual, selected: selecionada, correct: correta, isCorrect: acertou, materia: q.subject, serie: q.serieN, segundos });
+
+  $('val-acertos').innerText = acertos;
+  $('val-erros').innerText = erros;
+  if (respondidas === totalQuestoes) finalizarProva();
+}
+
+function finalizarProva() {
+  clearInterval(timerInterval);
+  finalTimeFormatted = fmtTempo(Math.floor((Date.now() - startTime) / 1000));
+
+  setTimeout(() => {
+    $('score-board').style.display = 'none';
+    $('exam-toolbar').style.display = 'none';
+    $('final-acertos').innerText = acertos;
+    $('final-erros').innerText = erros;
+    $('final-time').innerText = finalTimeFormatted;
+    $('final-porcentagem').innerText = `Aproveitamento: ${pct(acertos, totalQuestoes)}%`;
+
+    const tbody = $('tabela-corpo');
+    tbody.innerHTML = '';
+    [...respostasAluno].sort((a, b) => a.numVisual - b.numVisual).forEach(r => {
+      const qc = questoesAtuais.find(q => q.id === r.questaoId);
+      const explicacao = qc.explicacao || 'Explicação não cadastrada.';
+      const tr = document.createElement('tr');
+      tr.className = 'row-conferencia';
+      tr.onclick = () => toggleExplicacao(`exp-${r.numVisual}`);
+      tr.innerHTML = `<td>${r.numVisual}</td><td><strong>${r.selected}</strong></td><td><strong>${r.correct}</strong></td><td class="${r.isCorrect ? 'status-acerto' : 'status-erro'}">${r.isCorrect ? '✅ Acertou' : '❌ Errou'}</td>`;
+      const trExp = document.createElement('tr');
+      trExp.innerHTML = `<td colspan="4" style="padding:0;border:none;"><div id="exp-${r.numVisual}" class="explicacao-box"><strong>💡 Resolução:</strong> ${explicacao}</div></td>`;
+      tbody.appendChild(tr);
+      tbody.appendChild(trExp);
+    });
+
+    $('btn-review').style.display = erros > 0 ? 'block' : 'none';
+    $('result-card').style.display = 'block';
+    $('result-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 600);
+}
+
+function toggleExplicacao(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function iniciarRevisao() {
+  const erradas = respostasAluno.filter(r => !r.isCorrect).map(r => todasAsQuestoes.find(q => q.id === r.questaoId));
+  if (!erradas.length) return;
+
+  $('result-card').style.display = 'none';
+  $('exam-toolbar').style.display = 'block';
+  acertos = 0; erros = 0; respondidas = 0; respostasAluno = [];
+  $('val-acertos').innerText = 0; $('val-erros').innerText = 0;
+
+  questoesAtuais = shuffle(erradas);
+  totalQuestoes = questoesAtuais.length;
+  $('score-board').style.display = 'flex';
+  startTimer();
+  renderQuestions(questoesAtuais);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== SALVAR NOTA (uma linha por disciplina, com tempo real) =====
+async function salvarNaNuvem() {
+  const nomeInput = $('student-name');
+  const btn = $('btn-save-name');
+  const nome = sessao.tipo === 'aluno' ? sessao.nome : nomeInput.value.trim();
+  if (!nome) { alert('Digite seu nome antes de salvar a nota!'); nomeInput.focus(); return; }
+
+  btn.disabled = true;
+  btn.innerText = '⏳ Salvando...';
+  btn.style.backgroundColor = '#95a5a6';
+
+  const porMateria = {};
+  respostasAluno.forEach(r => {
+    if (!porMateria[r.materia]) porMateria[r.materia] = { materia: r.materia, serie: r.serie, acertos: 0, erros: 0, segundos: 0, erradas: [] };
+    const g = porMateria[r.materia];
+    if (r.isCorrect) g.acertos++;
+    else { g.erros++; g.erradas.push(r.questaoId); }
+    g.segundos += r.segundos;
+  });
+
+  const registrosEnvio = Object.values(porMateria).map(g => ({
+    materia: g.materia,
+    serie: g.serie,
+    acertos: g.acertos,
+    erros: g.erros,
+    porcentagem: pct(g.acertos, g.acertos + g.erros),
+    tempoGasto: fmtTempo(g.segundos),
+    segundos: g.segundos,
+    erradas: g.erradas.join(',')
+  }));
+
+  try {
+    const r = await api('salvar', { nome, sessao: new Date().toISOString(), registros: registrosEnvio });
+    if (!r.ok) throw new Error(r.msg || 'Falha desconhecida');
+    btn.innerText = '✅ Salvo!';
+    btn.style.backgroundColor = 'var(--success)';
+    nomeInput.disabled = true;
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao salvar: ' + err.message);
+    btn.disabled = false;
+    btn.innerText = '💾 Tentar Novamente';
+    btn.style.backgroundColor = 'var(--error)';
+  }
+}
+
+function imprimirProvaCompleta() {
+  document.querySelectorAll('details').forEach(d => d.setAttribute('open', 'true'));
+  document.body.classList.remove('print-report-only');
+  window.print();
+}
+function imprimirApenasGabarito() {
+  document.body.classList.add('print-gabarito-only');
+  window.print();
+  setTimeout(() => document.body.classList.remove('print-gabarito-only'), 1000);
+}
+function salvarCartaoResposta() {
+  document.body.classList.add('print-report-only');
+  window.print();
+  setTimeout(() => document.body.classList.remove('print-report-only'), 1000);
+}
+
+// ===== PAINEL =====
+async function toggleDashboard() {
+  const dash = $('dashboard-view'), app = $('app-view');
+  if (dash.style.display === 'block') {
+    dash.style.display = 'none';
+    app.style.display = 'block';
+    return;
+  }
+  app.style.display = 'none';
+  dash.style.display = 'block';
+  const d = await api('historico');
+  if (d.error) { alert(d.error); return; }
+  registros = d.map(normalizaRegistro);
+  preencherFiltrosPainel();
+  atualizarPainel();
+  window.scrollTo(0, 0);
+}
+
+function preencherFiltrosPainel() {
+  const aluno = sessao.tipo === 'aluno';
+  const selS = $('f-serie'), selP = $('f-pessoa'), selM = $('f-materia');
+
+  if (aluno) {
+    // Aluno(a) vê somente o próprio ano e o próprio nome
+    selS.innerHTML = `<option value="${sessao.serie}">${rotuloSerie(sessao.serie)}</option>`;
+    selP.innerHTML = `<option value="${sessao.nome}">${sessao.nome}</option>`;
+  } else {
+    const series = [...new Set(registros.map(r => r.serie).filter(Boolean))].sort((a, b) => a - b);
+    const pessoas = [...new Set(registros.map(r => r.nome))].filter(n => n !== 'Anônimo').sort();
+    selS.innerHTML = '<option value="todas">Todos os anos</option>' +
+      series.map(s => `<option value="${s}">${rotuloSerie(s)}</option>`).join('');
+    selP.innerHTML = '<option value="todos">Todas as pessoas</option>' +
+      pessoas.map(p => `<option value="${p}">${p}</option>`).join('');
+  }
+  selS.disabled = aluno;
+  selP.disabled = aluno;
+
+  const materias = [...new Set(registros.map(r => r.materia))].filter(m => m !== '—').sort();
+  selM.innerHTML = '<option value="todas">Todas as disciplinas</option>' +
+    materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  $('bloco-podio').classList.toggle('hidden', aluno);
+}
+
+function registrosFiltrados() {
+  const ser = $('f-serie').value, pes = $('f-pessoa').value, mat = $('f-materia').value;
+  return registros.filter(r =>
+    (ser === 'todas' || String(r.serie) === ser) &&
+    (pes === 'todos' || r.nome === pes) &&
+    (mat === 'todas' || r.materia === mat));
+}
+
+// Soma as disciplinas de uma mesma realização (mesma sessão) em uma linha por prova
+function agregarSessoes(lista) {
+  const mapa = {};
+  lista.forEach(r => {
+    if (!mapa[r.sessao]) mapa[r.sessao] = { ts: r.ts, data: r.data, acertos: 0, total: 0, segundos: 0 };
+    const s = mapa[r.sessao];
+    s.acertos += r.acertos; s.total += r.total; s.segundos += r.segundos;
+  });
+  return Object.values(mapa).sort((a, b) => a.ts - b.ts);
+}
+
+// Agrupa por disciplina ou por pessoa, conforme o filtro
+function agregarGrupos(lista, campo) {
+  const mapa = {};
+  lista.forEach(r => {
+    const k = campo === 'nome' ? r.nome : r.materia;
+    if (!mapa[k]) mapa[k] = { acertos: 0, total: 0, segundos: 0, n: 0 };
+    const g = mapa[k];
+    g.acertos += r.acertos; g.total += r.total; g.segundos += r.segundos; g.n++;
+  });
+  return Object.entries(mapa)
+    .map(([rotulo, g]) => ({ rotulo, pct: pct(g.acertos, g.total), minMedio: +(g.segundos / g.n / 60).toFixed(1) }))
+    .sort((a, b) => a.rotulo.localeCompare(b.rotulo));
+}
+
+function desenharGrafico(id, tipo, labels, datasets, titulo, yMax) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id).getContext('2d'), {
+    type: tipo,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { title: { display: true, text: titulo } },
+      scales: { y: { beginAtZero: true, ...(yMax ? { max: yMax } : {}) } }
     }
+  });
+}
 
-    function startQuiz() {
-        if(todasAsQuestoes.length === 0) { alert("Nenhuma questão carregada."); return; }
-        
-        controls.style.display = 'none'; 
-        examToolbar.style.display = 'block'; 
-        resultCard.style.display = 'none';
-        
-        acertos = 0; erros = 0; respondidas = 0; 
-        respostasAluno = [];
-        document.getElementById('val-acertos').innerText = 0; 
-        document.getElementById('val-erros').innerText = 0;
-        
-        const btnSave = document.getElementById('btn-save-name');
-        btnSave.disabled = false;
-        btnSave.innerText = "💾 Salvar Nota";
-        btnSave.style.backgroundColor = "var(--success)";
-        document.getElementById('student-name').value = ""; 
-        document.getElementById('student-name').disabled = false;
+function atualizarPainel() {
+  const lista = registrosFiltrados();
+  const sessoes = agregarSessoes(lista);
+  // Disciplina escolhida e pessoa "todas": compara pessoas. Caso contrário, compara disciplinas.
+  const campo = ($('f-materia').value !== 'todas' && $('f-pessoa').value === 'todos') ? 'nome' : 'materia';
+  const grupos = agregarGrupos(lista, campo);
+  const rotComp = campo === 'nome' ? 'pessoa' : 'disciplina';
+  const labelsSessoes = sessoes.map(s => s.data);
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR');
+  desenharGrafico('chartEvolPct', 'line', labelsSessoes,
+    [{ label: 'Aproveitamento (%)', data: sessoes.map(s => pct(s.acertos, s.total)), borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.2)', fill: true, tension: 0.3 }],
+    'Aproveitamento ao longo do tempo (%)', 100);
 
-        const materia = document.getElementById('materia').value;
-        const qtd = parseInt(document.getElementById('qtd').value);
+  desenharGrafico('chartEvolTempo', 'bar', labelsSessoes,
+    [{ label: 'Tempo (min)', data: sessoes.map(s => +(s.segundos / 60).toFixed(1)), backgroundColor: '#f39c12' }],
+    'Tempo gasto por realização (min)');
 
-        let filtradas = todasAsQuestoes.filter(q => materia === "todas" ? true : q.subject === materia);
-        let finais = [];
+  desenharGrafico('chartComparPct', 'bar', grupos.map(g => g.rotulo),
+    [{ label: 'Aproveitamento (%)', data: grupos.map(g => g.pct), backgroundColor: '#2c3e50' }],
+    `Aproveitamento por ${rotComp} (%)`, 100);
 
-        if (materia === "todas") {
-            let materiasUnicasFiltradas = [...new Set(filtradas.map(q => q.subject))];
-            let qtdPorMateria = Math.ceil(qtd / materiasUnicasFiltradas.length);
+  desenharGrafico('chartComparTempo', 'bar', grupos.map(g => g.rotulo),
+    [{ label: 'Tempo médio (min)', data: grupos.map(g => g.minMedio), backgroundColor: '#16a085' }],
+    `Tempo médio por ${rotComp} (min)`);
 
-            materiasUnicasFiltradas.forEach(mat => {
-                let qMat = shuffle(filtradas.filter(q => q.subject === mat));
-                finais = [...finais, ...qMat.slice(0, qtdPorMateria)];
-            });
-            
-            finais = shuffle(finais).slice(0, qtd); 
-        } else {
-            finais = shuffle(filtradas).slice(0, qtd);
-        }
+  renderHistorico(lista);
+  renderPodio();
+}
 
-        finais.sort((a, b) => a.subject.localeCompare(b.subject));
-        
-        questoesAtuais = finais; 
-        totalQuestoes = finais.length;
-        
-        if(totalQuestoes === 0) { alert("Sem questões suficientes."); controls.style.display = 'flex'; return; }
+function renderHistorico(lista) {
+  const tbody = document.querySelector('#tabela-historico tbody');
+  if (!lista.length) {
+    tbody.innerHTML = "<tr><td colspan='7'>Nenhum resultado para este filtro.</td></tr>";
+    return;
+  }
+  tbody.innerHTML = [...lista].sort((a, b) => b.ts - a.ts).map(r =>
+    `<tr><td>${r.data}</td><td>${r.nome}</td><td>${r.materia}</td><td>${r.acertos}</td><td>${r.erros}</td><td>${pct(r.acertos, r.total)}%</td><td>${fmtTempo(r.segundos)}</td></tr>`
+  ).join('');
+}
 
-        scoreBoard.style.display = 'flex'; 
-        startTimer(); 
-        renderQuestions(finais); 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+function renderPodio() {
+  const box = $('ranking-box');
+  if (sessao.tipo !== 'admin') { box.innerHTML = ''; return; }
+  const ser = $('f-serie').value;
+  const base = registros.filter(r => (ser === 'todas' || String(r.serie) === ser) && r.nome !== 'Anônimo');
 
-    function startTimer() {
-        startTime = Date.now(); 
-        document.getElementById('timer-val').innerText = "00:00";
-        timerInterval = setInterval(() => {
-            const s = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById('timer-val').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-        }, 1000);
-    }
+  // Melhor aproveitamento de cada pessoa em uma única realização
+  const porSessao = {};
+  base.forEach(r => {
+    const k = r.nome + '|' + r.sessao;
+    if (!porSessao[k]) porSessao[k] = { nome: r.nome, acertos: 0, total: 0 };
+    porSessao[k].acertos += r.acertos;
+    porSessao[k].total += r.total;
+  });
+  const melhor = {};
+  Object.values(porSessao).forEach(s => {
+    const p = pct(s.acertos, s.total);
+    if (!melhor[s.nome] || p > melhor[s.nome].pct) melhor[s.nome] = { nome: s.nome, pct: p };
+  });
+  const top = Object.values(melhor).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const medalhas = ['🥇', '🥈', '🥉'];
+  box.innerHTML = top.length
+    ? top.map((a, i) => `
+        <div class="podio-card podio-${i + 1}">
+          <div class="podio-pos">${medalhas[i]} ${i + 1}º</div>
+          <div class="podio-nome">${a.nome}</div>
+          <div class="podio-nota">${a.pct}%</div>
+        </div>`).join('')
+    : '<p>Sem dados ainda.</p>';
+}
 
-    function renderQuestions(lista) {
-        let html = ""; let currentSubject = ""; 
-        gabaritoGrid.innerHTML = "";
-
-        lista.forEach((q, index) => {
-            if (q.subject !== currentSubject) { 
-                currentSubject = q.subject; 
-                html += `<div class="subject-title">${currentSubject}</div>`; 
-            }
-
-            let tagPartes = [];
-            if(q.instituicao) tagPartes.push(q.instituicao);
-            if(q.ano) tagPartes.push(q.ano);
-            if(q.serie) tagPartes.push(`• ${q.serie}`);
-            
-            let tagHtml = tagPartes.length > 0 ? `<div class="tag-fonte">${tagPartes.join(' ')}</div>` : "";
-            
-            let textoHtml = q.textoApoio ? `<details class="texto-apoio"><summary>Ler texto de apoio</summary><div class="texto-conteudo">${q.textoApoio}</div></details>` : "";
-            
-            let imagemHtml = "";
-            if (q.imagem && q.imagem !== "") {
-                imagemHtml = `<img src="${q.imagem}" class="imagem-questao" alt="Imagem da questão">`;
-            }
-
-            let optionsHtml = "";
-            for (const [key, value] of Object.entries(q.options)) {
-                if(value && value !== "") { 
-                    optionsHtml += `
-                        <label class="option" id="label-${q.id}-${key}">
-                            <input type="radio" name="q${q.id}" value="${key}" onchange="checkAnswer(${q.id}, '${key}', '${q.correct}', ${index + 1})">
-                            <span><strong>${key})</strong> ${value}</span>
-                        </label>`; 
-                }
-            }
-
-            let linkRecurso = `${LINK_RECURSO}${q.id}%20(Instituicao:%20${q.instituicao})`;
-            let recursoHtml = `<a href="${linkRecurso}" target="_blank" class="btn-recurso">⚠️ Encontrou erro nesta questão? Avise aqui.</a>`;
-            
-            let num = index + 1;
-            html += `
-                <div class="question-card">
-                    ${tagHtml}
-                    ${textoHtml}
-                    <div class="question-text">Questão ${num} - ${q.text}</div>
-                    ${imagemHtml}
-                    <div class="options">${optionsHtml}</div>
-                    <div class="feedback" id="feedback-${q.id}"></div>
-                    ${recursoHtml}
-                </div>`;
-                
-            gabaritoGrid.innerHTML += `<div class="gabarito-item">Questão ${num}: ${q.correct}</div>`;
-        });
-        quizContainer.innerHTML = html;
-    }
-
-    function checkAnswer(questionId, selected, correct, numVisual) {
-        document.querySelectorAll(`input[name="q${questionId}"]`).forEach(opt => { opt.disabled = true; opt.parentElement.classList.add('disabled'); });
-        
-        const feedback = document.getElementById(`feedback-${questionId}`);
-        const labelSel = document.getElementById(`label-${questionId}-${selected}`);
-        const labelCorr = document.getElementById(`label-${questionId}-${correct}`);
-        const isCorrect = (selected === correct); 
-        
-        respondidas++;
-
-        if (isCorrect) { 
-            acertos++; labelSel.classList.add('correct'); 
-            feedback.className = "feedback success"; feedback.innerHTML = `✅ <strong>Acertou!</strong>`; 
-        } else { 
-            erros++; labelSel.classList.add('incorrect'); labelCorr.classList.add('correct'); 
-            feedback.className = "feedback error"; feedback.innerHTML = `❌ <strong>Errou!</strong> Correta: <strong>${correct}</strong>.`; 
-        }
-
-        respostasAluno.push({ 
-            questaoId: questionId, numVisual, selected, correct, isCorrect, 
-            materia: questoesAtuais.find(q=>q.id===questionId).subject 
-        });
-
-        document.getElementById('val-acertos').innerText = acertos; 
-        document.getElementById('val-erros').innerText = erros;
-        
-        if (respondidas === totalQuestoes) finalizarProva();
-    }
-
-    function finalizarProva() {
-        clearInterval(timerInterval);
-        const s = Math.floor((Date.now() - startTime) / 1000);
-        finalTimeFormatted = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-        
-        setTimeout(() => {
-            scoreBoard.style.display = 'none'; 
-            examToolbar.style.display = 'none';
-            
-            document.getElementById('final-acertos').innerText = acertos; 
-            document.getElementById('final-erros').innerText = erros;
-            document.getElementById('final-time').innerText = finalTimeFormatted; 
-            document.getElementById('final-porcentagem').innerText = `Aproveitamento: ${Math.round((acertos/totalQuestoes)*100)}%`;
-
-            tabelaCorpo.innerHTML = "";
-            respostasAluno.sort((a,b)=>a.numVisual-b.numVisual).forEach(r => {
-                let questaoCompleta = questoesAtuais.find(q => q.id === r.questaoId);
-                let explicacao = questaoCompleta.explicacao ? questaoCompleta.explicacao : "Explicação não cadastrada.";
-                
-                let tr = document.createElement('tr'); 
-                tr.className = "row-conferencia"; 
-                tr.onclick = () => toggleExplicacao(`exp-${r.numVisual}`);
-                tr.innerHTML = `<td>${r.numVisual}</td><td><strong>${r.selected}</strong></td><td><strong>${r.correct}</strong></td><td class="${r.isCorrect?'status-acerto':'status-erro'}">${r.isCorrect?'✅ Acertou':'❌ Errou'}</td>`;
-                
-                let trExp = document.createElement('tr'); 
-                trExp.innerHTML = `<td colspan="4" style="padding: 0; border: none;"><div id="exp-${r.numVisual}" class="explicacao-box"><strong>💡 Resolução:</strong> ${explicacao}</div></td>`;
-                
-                tabelaCorpo.appendChild(tr); 
-                tabelaCorpo.appendChild(trExp);
-            });
-
-            btnReview.style.display = erros > 0 ? 'block' : 'none'; 
-            resultCard.style.display = 'block'; 
-            resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 600);
-    }
-
-    function toggleExplicacao(id) {
-        let el = document.getElementById(id);
-        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-    }
-
-    async function salvarNaNuvem() {
-        const nomeInput = document.getElementById('student-name');
-        const btnSave = document.getElementById('btn-save-name');
-        let nomeAluno = nomeInput.value.trim();
-
-        if(nomeAluno === "") {
-            alert("Por favor, digite seu nome antes de salvar a nota!");
-            nomeInput.focus();
-            return;
-        }
-
-        btnSave.disabled = true;
-        btnSave.innerText = "⏳ Salvando...";
-        btnSave.style.backgroundColor = "#95a5a6";
-
-        const erradasIDs = respostasAluno.filter(r => !r.isCorrect).map(r => r.questaoId).join(',');
-        const materia = document.getElementById('materia').value;
-        
-        const payload = {
-            nome: nomeAluno,
-            materia: materia,
-            tempoGasto: finalTimeFormatted,
-            acertos: acertos, 
-            erros: erros,
-            porcentagem: Math.round((acertos/totalQuestoes)*100),
-            questoesErradasIDs: erradasIDs
-        };
-
-        try {
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-            
-            btnSave.innerText = "✅ Salvo!";
-            btnSave.style.backgroundColor = "var(--success)";
-            nomeInput.disabled = true; 
-            historicoGeral = []; 
-            
-        } catch (error) {
-            console.error("Erro ao salvar:", error);
-            alert("Erro ao salvar. Verifique sua conexão.");
-            btnSave.disabled = false;
-            btnSave.innerText = "💾 Tentar Novamente";
-            btnSave.style.backgroundColor = "var(--error)";
-        }
-    }
-
-    function iniciarRevisao() {
-        let erradas = respostasAluno.filter(r => !r.isCorrect).map(r => todasAsQuestoes.find(q => q.id === r.questaoId));
-        if(erradas.length === 0) return;
-        
-        resultCard.style.display = 'none'; 
-        examToolbar.style.display = 'block'; 
-        acertos = 0; erros = 0; respondidas = 0; respostasAluno = [];
-        document.getElementById('val-acertos').innerText = 0; 
-        document.getElementById('val-erros').innerText = 0;
-        
-        questoesAtuais = shuffle(erradas); 
-        totalQuestoes = questoesAtuais.length;
-        scoreBoard.style.display = 'flex'; 
-        startTimer(); 
-        renderQuestions(questoesAtuais); 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    async function toggleDashboard() {
-        const app = document.getElementById('app-view');
-        const dash = document.getElementById('dashboard-view');
-        
-        if (dash.style.display === 'block') { 
-            dash.style.display = 'none'; 
-            app.style.display = 'block'; 
-        } else { 
-            app.style.display = 'none'; 
-            dash.style.display = 'block'; 
-            await baixarHistorico(); 
-        }
-    }
-
-    async function baixarHistorico() {
-        try {
-            const response = await fetch(API_URL + "?action=historico");
-            historicoGeral = await response.json();
-            
-            const selectAluno = document.getElementById('filtro-aluno');
-            let alunosUnicos = [...new Set(historicoGeral.map(row => row.Nome))].filter(n => n && n.trim() !== "" && n !== "Anônimo");
-            let valorAtual = selectAluno.value;
-            
-            selectAluno.innerHTML = `<option value="todos">Ver Todos</option>` + alunosUnicos.map(a => `<option value="${a}">${a}</option>`).join('');
-            
-            if(alunosUnicos.includes(valorAtual)) {
-                selectAluno.value = valorAtual;
-            } else {
-                selectAluno.value = "todos";
-            }
-
-            gerarPodio();
-            atualizarDashboard();
-
-        } catch (error) { 
-            console.error("Erro histórico:", error); 
-        }
-    }
-
-    function atualizarDashboard() {
-        let filtro = document.getElementById('filtro-aluno').value;
-        let dadosFiltrados = filtro === "todos" ? historicoGeral : historicoGeral.filter(row => row.Nome === filtro);
-
-        const tbody = document.querySelector('#tabela-historico tbody'); 
-        tbody.innerHTML = "";
-        
-        if(dadosFiltrados.length === 0) { 
-            tbody.innerHTML = "<tr><td colspan='7'>Nenhuma prova registrada.</td></tr>"; 
-            renderCharts([], [], []);
-            return; 
-        }
-
-        let dadosTabela = [...dadosFiltrados].reverse();
-
-        dadosTabela.forEach((row) => {
-            let dataStr = row.Data;
-            if(dataStr && dataStr.includes('-')) {
-                let partes = dataStr.split('-');
-                if(partes.length === 3 && partes[0].length === 4) {
-                    dataStr = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
-            }
-            tbody.innerHTML += `<tr><td>${dataStr}</td><td>${row.Nome || 'Anônimo'}</td><td>${row.Materia}</td><td>${row.Acertos}</td><td>${row.Erros}</td><td>${row.Porcentagem}%</td><td>${row.Tempo_Gasto}</td></tr>`;
-        });
-
-        let dadosGrafico = dadosFiltrados.slice(-10);
-
-        let labels = []; let notas = []; let tempos = [];
-        dadosGrafico.forEach((row) => {
-            let dataStr = row.Data;
-            if(dataStr && dataStr.includes('-')) { 
-                let partes = dataStr.split('-');
-                if(partes.length === 3 && partes[0].length === 4) {
-                    dataStr = `${partes[2]}/${partes[1]}`;
-                }
-            }
-            labels.push(dataStr || row.Hora); 
-            notas.push(Number(row.Porcentagem) || 0);
-            let partes = String(row.Tempo_Gasto).split(':');
-            tempos.push(Number(partes[0]) + (Number(partes[1])/60) || 0);
-        });
-
-        renderCharts(labels, notas, tempos);
-    }
-
-    function gerarPodio() {
-        let melhoresNotas = {};
-        historicoGeral.forEach(row => {
-            let nome = row.Nome || 'Anônimo';
-            let nota = Number(row.Porcentagem);
-            if (nome !== "Anônimo" && nome !== "") {
-                if (!melhoresNotas[nome] || nota > melhoresNotas[nome].nota) {
-                    melhoresNotas[nome] = { nome: nome, nota: nota };
-                }
-            }
-        });
-
-        let top3 = Object.values(melhoresNotas).sort((a, b) => b.nota - a.nota).slice(0, 3);
-        
-        let html = "";
-        top3.forEach((aluno, index) => {
-            let classe = `podio-${index + 1}`;
-            let medalha = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-            html += `
-                <div class="podio-card ${classe}">
-                    <div class="podio-pos">${medalha} ${index + 1}º</div>
-                    <div class="podio-nome">${aluno.nome}</div>
-                    <div class="podio-nota">${aluno.nota}%</div>
-                </div>
-            `;
-        });
-        document.getElementById('ranking-box').innerHTML = html;
-    }
-
-    function renderCharts(labels, notas, tempos) {
-        if (chartNotas) chartNotas.destroy(); 
-        if (chartTempo) chartTempo.destroy();
-        
-        chartNotas = new Chart(document.getElementById('notasChart').getContext('2d'), {
-            type: 'line', 
-            data: { labels: labels, datasets: [{ label: 'Aproveitamento (%)', data: notas, borderColor: '#27ae60', backgroundColor: 'rgba(39, 174, 96, 0.2)', fill: true, tension: 0.3 }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
-        });
-        
-        chartTempo = new Chart(document.getElementById('tempoChart').getContext('2d'), {
-            type: 'bar', 
-            data: { labels: labels, datasets: [{ label: 'Tempo (minutos)', data: tempos, backgroundColor: '#f39c12' }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-        });
-    }
-
-    function imprimirProvaCompleta() {
-        document.querySelectorAll('details').forEach(d => d.setAttribute('open', 'true'));
-        document.body.classList.remove('print-report-only'); 
-        window.print();
-    }
-    function imprimirApenasGabarito() {
-        document.body.classList.add('print-gabarito-only'); 
-        window.print();
-        setTimeout(() => document.body.classList.remove('print-gabarito-only'), 1000);
-    }
-    function salvarCartaoResposta() {
-        document.body.classList.add('print-report-only'); 
-        window.print();
-        setTimeout(() => document.body.classList.remove('print-report-only'), 1000);
-    }
-
-    carregarQuestoes();
 </script>
 </body>
 </html>
