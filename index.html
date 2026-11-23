@@ -107,6 +107,8 @@ details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
 .podio-nome { font-weight:bold; font-size:1.1rem; color:var(--primary); }
 .podio-nota { font-size:1.3rem; color:var(--success); font-weight:bold; margin-top:5px; }
 
+.rank-eu td { background:#fffdf5; font-weight:bold; }
+.rank-voce { background:#eef6fb; border-left:4px solid var(--primary); padding:12px 15px; border-radius:6px; margin:10px 0 15px; text-align:left; }
 .print-only { display:none; }
 .gabarito-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
 .gabarito-item { border:2px solid #000; padding:15px; text-align:center; font-weight:bold; }
@@ -150,11 +152,13 @@ details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
       <button class="tab" id="tab-admin" onclick="trocarTab('admin')">Administração</button>
     </div>
 
-    <div id="form-entrar">
-      <div class="field"><label for="l-email">E-mail</label><input id="l-email" type="email"></div>
-      <div class="field"><label for="l-codigo">Código de acesso (está no e-mail de autorização)</label><input id="l-codigo" type="text"></div>
-      <button class="start-btn" style="margin-top:5px;width:100%" onclick="entrarAluno()">Entrar</button>
-    </div>
+    <form id="form-entrar" onsubmit="entrarAluno(); return false;">
+      <div class="field"><label for="l-email">E-mail</label><input id="l-email" name="username" type="email" autocomplete="username"></div>
+      <div class="field"><label for="l-codigo">Código de acesso (está no e-mail de autorização)</label><input id="l-codigo" name="password" type="password" autocomplete="current-password"></div>
+      <label style="display:block;margin:0 0 6px;font-size:.9rem"><input type="checkbox" id="l-mostrar" onchange="$('l-codigo').type = this.checked ? 'text' : 'password'"> Mostrar código</label>
+      <label style="display:block;margin:0 0 10px;font-size:.9rem"><input type="checkbox" id="l-lembrar" checked> Lembrar neste aparelho</label>
+      <button type="submit" class="start-btn" style="margin-top:5px;width:100%">Entrar</button>
+    </form>
 
     <div id="form-solicitar" class="hidden">
       <div class="field"><label for="s-nome">Nome do aluno</label><input id="s-nome" type="text"></div>
@@ -163,10 +167,10 @@ details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
       <button class="start-btn" style="margin-top:5px;width:100%" onclick="solicitarAcesso()">Enviar pedido</button>
     </div>
 
-    <div id="form-admin" class="hidden">
-      <div class="field"><label for="a-chave">Chave de administração</label><input id="a-chave" type="password"></div>
-      <button class="start-btn" style="margin-top:5px;width:100%" onclick="entrarAdmin()">Entrar</button>
-    </div>
+    <form id="form-admin" class="hidden" onsubmit="entrarAdmin(); return false;">
+      <div class="field"><label for="a-chave">Chave de administração</label><input id="a-chave" type="password" autocomplete="current-password"></div>
+      <button type="submit" class="start-btn" style="margin-top:5px;width:100%">Entrar</button>
+    </form>
 
     <div id="login-msg" class="msg"></div>
   </div>
@@ -252,6 +256,11 @@ details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
   <div id="dashboard-view">
     <div class="dashboard-card">
       <h2 style="margin-top:0;color:var(--primary);text-align:center;">📊 Painel de Evolução</h2>
+      <div class="login-tabs" style="max-width:420px;margin:0 auto 18px">
+        <button class="tab ativo" id="ptab-meu" onclick="trocarPainel('meu')">Meu desempenho</button>
+        <button class="tab" id="ptab-rank" onclick="trocarPainel('rank')">Ranking da série</button>
+      </div>
+      <div id="painel-meu">
 
       <div class="filtro-aluno-box">
         <div class="control-group"><label for="f-serie">Ano:</label><select id="f-serie" onchange="atualizarPainel()"></select></div>
@@ -277,6 +286,22 @@ details.texto-apoio summary::before { content:'📖'; margin-right:8px; }
           <thead><tr><th>Data</th><th>Aluno</th><th>Matéria</th><th>Acertos</th><th>Erros</th><th>%</th><th>Tempo</th></tr></thead>
           <tbody></tbody>
         </table>
+      </div>
+      </div>
+
+      <div id="painel-rank" class="hidden">
+        <div class="filtro-aluno-box">
+          <div class="control-group hidden" id="grupo-rank-serie"><label for="r-serie">Ano:</label><select id="r-serie" onchange="carregarRanking()"></select></div>
+          <div class="control-group"><label for="r-materia">Disciplina:</label><select id="r-materia" onchange="renderRanking()"></select></div>
+        </div>
+        <p id="rank-info" style="text-align:center;color:#7f8c8d;font-size:.9rem;margin:0 0 10px"></p>
+        <div id="rank-voce" class="rank-voce hidden"></div>
+        <div style="overflow-x:auto;">
+          <table class="tabela-respostas" id="tabela-ranking">
+            <thead><tr><th>#</th><th>Aluno</th><th>Aproveitamento</th><th>Questões</th><th>Provas</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -309,7 +334,7 @@ const gabaritoGrid = () => $('gabarito-grid');
 const quizContainer = () => $('quiz-container');
 
 // ===== UTILITÁRIOS =====
-function serieNum(s) { const m = String(s ?? '').match(/\d+/); return m ? Number(m[0]) : null; }
+function serieNum(s) { const m = String(s ?? '').match(/\d+/); const n = m ? Number(m[0]) : null; return n >= 1 && n <= 12 ? n : null; }
 function rotuloSerie(n) { return n ? `${n}º ano` : 'Geral'; }
 function fmtTempo(seg) {
   seg = Math.round(seg || 0);
@@ -323,17 +348,26 @@ function shuffle(array) {
   }
   return array;
 }
-// Lê o tempo de qualquer formato que chegue da planilha (segundos, "mm:ss", "hh:mm:ss" ou data ISO)
+// Lê o tempo de qualquer formato que vier da planilha.
+// Linhas antigas: o Sheets transformou "04:49" (4 min 49 s) em hora; por isso A:B ou A:B:00 = minutos:segundos.
 function tempoParaSegundos(r) {
   if (r.Tempo_Segundos !== undefined && r.Tempo_Segundos !== '' && !isNaN(Number(r.Tempo_Segundos))) return Number(r.Tempo_Segundos);
-  const v = r.Tempo_Gasto;
-  if (v instanceof Date) return v.getHours() * 3600 + v.getMinutes() * 60 + v.getSeconds();
-  const s = String(v ?? '');
-  let m = s.match(/T(\d{2}):(\d{2}):(\d{2})/);
-  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+  const s = String(r.Tempo_Gasto ?? '').trim();
+  let m = s.match(/^(\d+)\s*min\s*(\d+)\s*s$/i);
+  if (m) return (+m[1]) * 60 + (+m[2]);
+  m = s.match(/^(\d+)\s*s$/i);
+  if (m) return +m[1];
   m = s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
-  if (m) return m[3] !== undefined ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
+  if (m) {
+    if (m[3] === undefined || m[3] === '00') return (+m[1]) * 60 + (+m[2]);
+    return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+  }
   return 0;
+}
+function fmtMinSeg(seg) {
+  seg = Math.round(seg || 0);
+  const m = Math.floor(seg / 60), sec = seg % 60;
+  return m ? `${m} min ${sec}s` : `${sec}s`;
 }
 function normalizaRegistro(r) {
   const ds = String(r.Data ?? '');
@@ -344,7 +378,7 @@ function normalizaRegistro(r) {
     data: iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : ds,
     ts: iso ? new Date(`${iso}T${hora || '00:00'}:00`).getTime() : 0,
     nome: r.Nome || 'Anônimo',
-    materia: r.Materia || '—',
+    materia: String(r.Materia).toLowerCase() === 'todas' ? 'Misto (várias)' : (r.Materia || '—'),
     serie: serieNum(r.Serie),
     acertos: a, erros: e, total: a + e,
     segundos: tempoParaSegundos(r),
@@ -390,6 +424,7 @@ function salvarSessao(s) {
   sessionStorage.setItem(SESSAO_KEY, JSON.stringify(s));
   iniciarApp();
 }
+const LEMBRAR_KEY = 'simuladoCloudLembrar';
 async function entrarAluno() {
   const email = $('l-email').value.trim().toLowerCase();
   const codigo = $('l-codigo').value.trim().toUpperCase();
@@ -397,6 +432,10 @@ async function entrarAluno() {
   msg('login-msg', 'Verificando...', true);
   const r = await chamar('entrar', { email, codigo });
   if (!r.ok) { msg('login-msg', r.msg || 'Não foi possível entrar.'); return; }
+  try {
+    if ($('l-lembrar').checked) localStorage.setItem(LEMBRAR_KEY, JSON.stringify({ email, codigo }));
+    else localStorage.removeItem(LEMBRAR_KEY);
+  } catch (e) {}
   salvarSessao({ tipo: 'aluno', email, codigo, nome: r.nome, serie: r.serie });
 }
 async function entrarAdmin() {
@@ -416,6 +455,7 @@ async function solicitarAcesso() {
 }
 function sair() {
   sessionStorage.removeItem(SESSAO_KEY);
+  try { localStorage.removeItem(LEMBRAR_KEY); } catch (e) {}
   location.reload();
 }
 
@@ -428,11 +468,24 @@ async function iniciarApp() {
   $('dashboard-view').style.display = 'none';
   await carregarQuestoes();
 }
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   $('s-serie').innerHTML = '<option value="">Selecione...</option>' +
     SERIES_CADASTRO.map(s => `<option value="${s}">${s}º ano</option>`).join('');
   sessao = JSON.parse(sessionStorage.getItem(SESSAO_KEY) || 'null');
-  if (sessao) iniciarApp(); else mostrar('login');
+  if (sessao) { iniciarApp(); return; }
+  // Aluno que marcou "Lembrar neste aparelho": entra sozinho (e confere se o acesso continua autorizado)
+  let lem = null;
+  try { lem = JSON.parse(localStorage.getItem(LEMBRAR_KEY) || 'null'); } catch (e) {}
+  mostrar('login');
+  if (lem && lem.email && lem.codigo) {
+    $('l-email').value = lem.email;
+    $('l-codigo').value = lem.codigo;
+    msg('login-msg', 'Entrando...', true);
+    const r = await chamar('entrar', lem);
+    if (r.ok) { salvarSessao({ tipo: 'aluno', email: lem.email, codigo: lem.codigo, nome: r.nome, serie: r.serie }); return; }
+    try { localStorage.removeItem(LEMBRAR_KEY); } catch (e) {}
+    msg('login-msg', r.msg || '');
+  }
 });
 
 // ===== QUESTÕES E PROVA =====
@@ -440,7 +493,7 @@ async function carregarQuestoes() {
   const d = await api('questoes');
   if (d.error) { $('header-subtitle').innerText = 'Erro: ' + d.error; return false; }
 
-  todasAsQuestoes = d.map(q => ({
+  const mapeadas = d.map(q => ({
     id: Number(q.ID),
     subject: String(q.Materia).trim(),
     serieN: serieNum(q.Serie),
@@ -454,6 +507,9 @@ async function carregarQuestoes() {
     explicacao: q.Explicacao ? String(q.Explicacao).trim() : '',
     imagem: q.Imagem_URL ? String(q.Imagem_URL).trim() : ''
   }));
+  // Ignora questões com colunas deslocadas na planilha (gabarito que não é A-E ou sem a alternativa)
+  todasAsQuestoes = mapeadas.filter(q => q.text && /^[A-E]$/.test(q.correct) && q.options[q.correct]);
+  const ignoradas = mapeadas.length - todasAsQuestoes.length;
 
   const materias = [...new Set(todasAsQuestoes.map(q => q.subject))].sort();
   $('materia').innerHTML = '<option value="todas">Todas</option>' +
@@ -467,7 +523,7 @@ async function carregarQuestoes() {
   }
 
   $('header-subtitle').innerText = sessao.tipo === 'admin'
-    ? `Administração • ${todasAsQuestoes.length} questões carregadas`
+    ? `Administração • ${todasAsQuestoes.length} questões carregadas` + (ignoradas ? ` • ${ignoradas} ignoradas (erro na planilha)` : '')
     : `Aluno(a): ${sessao.nome} • ${rotuloSerie(sessao.serie)} • ${todasAsQuestoes.length} questões`;
   $('controls').style.display = 'flex';
   return true;
@@ -699,7 +755,7 @@ async function salvarNaNuvem() {
     acertos: g.acertos,
     erros: g.erros,
     porcentagem: pct(g.acertos, g.acertos + g.erros),
-    tempoGasto: fmtTempo(g.segundos),
+    tempoGasto: fmtMinSeg(g.segundos),
     segundos: g.segundos,
     erradas: g.erradas.join(',')
   }));
@@ -749,6 +805,7 @@ async function toggleDashboard() {
   if (d.error) { alert(d.error); return; }
   registros = d.map(normalizaRegistro);
   preencherFiltrosPainel();
+  trocarPainel('meu');
   atualizarPainel();
   window.scrollTo(0, 0);
 }
@@ -862,7 +919,7 @@ function renderHistorico(lista) {
     return;
   }
   tbody.innerHTML = [...lista].sort((a, b) => b.ts - a.ts).map(r =>
-    `<tr><td>${r.data}</td><td>${r.nome}</td><td>${r.materia}</td><td>${r.acertos}</td><td>${r.erros}</td><td>${pct(r.acertos, r.total)}%</td><td>${fmtTempo(r.segundos)}</td></tr>`
+    `<tr><td>${r.data}</td><td>${r.nome}</td><td>${r.materia}</td><td>${r.acertos}</td><td>${r.erros}</td><td>${pct(r.acertos, r.total)}%</td><td>${fmtMinSeg(r.segundos)}</td></tr>`
   ).join('');
 }
 
@@ -897,6 +954,79 @@ function renderPodio() {
     : '<p>Sem dados ainda.</p>';
 }
 
+
+// ===== RANKING DA SÉRIE =====
+const RANK_MINIMO = 10;   // mínimo de questões respondidas para aparecer no ranking
+let rankDados = null;
+
+function trocarPainel(t) {
+  $('painel-meu').classList.toggle('hidden', t !== 'meu');
+  $('painel-rank').classList.toggle('hidden', t !== 'rank');
+  $('ptab-meu').classList.toggle('ativo', t === 'meu');
+  $('ptab-rank').classList.toggle('ativo', t === 'rank');
+  if (t === 'rank') iniciarRanking();
+}
+
+async function iniciarRanking() {
+  const admin = sessao.tipo === 'admin';
+  $('grupo-rank-serie').classList.toggle('hidden', !admin);
+  if (admin && !$('r-serie').options.length) {
+    const series = [...new Set(todasAsQuestoes.map(q => q.serieN).filter(Boolean))].sort((a, b) => a - b);
+    $('r-serie').innerHTML = series.map(n => `<option value="${n}">${rotuloSerie(n)}</option>`).join('');
+  }
+  await carregarRanking();
+}
+
+async function carregarRanking() {
+  $('rank-info').textContent = 'Carregando ranking...';
+  $('rank-voce').classList.add('hidden');
+  const d = await api('ranking', sessao.tipo === 'admin' ? { serie: $('r-serie').value } : {});
+  if (d.error) { $('rank-info').textContent = d.error; return; }
+  rankDados = d;
+  const mats = [...new Set(d.pessoas.flatMap(p => Object.keys(p.materias)))].sort();
+  const atual = $('r-materia').value;
+  $('r-materia').innerHTML = '<option value="todas">Todas as disciplinas</option>' +
+    mats.map(m => `<option value="${m}">${m}</option>`).join('');
+  if (mats.includes(atual)) $('r-materia').value = atual;
+  renderRanking();
+}
+
+function renderRanking() {
+  if (!rankDados) return;
+  const mat = $('r-materia').value;
+  const linhas = rankDados.pessoas.map(p => {
+    let a = 0, e = 0, seg = 0, provas = 0;
+    Object.entries(p.materias).forEach(([m, v]) => {
+      if (mat === 'todas' || m === mat) { a += v.a; e += v.e; seg += v.s; provas += v.n; }
+    });
+    return { nome: p.nome, eu: p.eu, a, q: a + e, seg, provas: mat === 'todas' ? p.provas : provas };
+  }).filter(x => x.q > 0);
+
+  const ranque = linhas.filter(x => x.q >= RANK_MINIMO)
+    .sort((x, y) => pct(y.a, y.q) - pct(x.a, x.q) || y.q - x.q || (x.seg / x.q) - (y.seg / y.q));
+  const faltam = linhas.length - ranque.length;
+  const medalha = ['🥇', '🥈', '🥉'];
+
+  $('rank-info').textContent =
+    `${rotuloSerie(rankDados.serie)} • mínimo de ${RANK_MINIMO} questões respondidas para aparecer no ranking` +
+    (faltam > 0 ? ` • ${faltam} participante(s) ainda abaixo do mínimo` : '');
+
+  const tbody = document.querySelector('#tabela-ranking tbody');
+  tbody.innerHTML = ranque.length
+    ? ranque.map((x, i) => `<tr class="${x.eu ? 'rank-eu' : ''}"><td>${medalha[i] || (i + 1) + 'º'}</td><td>${x.nome}${x.eu ? ' (você)' : ''}</td><td>${pct(x.a, x.q)}%</td><td>${x.q}</td><td>${x.provas}</td></tr>`).join('')
+    : `<tr><td colspan="5">Ainda não há participantes com ${RANK_MINIMO} questões ou mais.</td></tr>`;
+
+  const box = $('rank-voce');
+  if (sessao.tipo === 'admin') { box.classList.add('hidden'); return; }
+  const eu = linhas.find(x => x.eu);
+  const pos = ranque.findIndex(x => x.eu);
+  let texto;
+  if (pos >= 0) texto = `Você está em <strong>${pos + 1}º lugar</strong> entre ${ranque.length} participante(s), com ${pct(eu.a, eu.q)}% de aproveitamento.`;
+  else if (eu) texto = `Você já respondeu ${eu.q} questão(ões) nesta seleção. Faltam <strong>${RANK_MINIMO - eu.q}</strong> para entrar no ranking.`;
+  else texto = 'Você ainda não tem provas salvas nesta disciplina. Faça um simulado e clique em "Salvar Nota".';
+  box.innerHTML = texto;
+  box.classList.remove('hidden');
+}
 </script>
 </body>
 </html>
